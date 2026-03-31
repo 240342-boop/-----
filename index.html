@@ -2,43 +2,63 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>BaaS Firebase Full</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Social App</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        
+        /* Стили авторизации */
+        .auth-bar { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; justify-content: center; }
+        .user-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #007bff; }
+        
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button#mainBtn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; margin-top: 10px; }
-        button#mainBtn:disabled { background: #ccc; }
+        
+        button { cursor: pointer; border: none; border-radius: 6px; font-weight: 600; transition: 0.3s; }
+        #loginBtn, #mainBtn { background: #007bff; color: white; padding: 12px; width: 100%; }
+        #logoutBtn { background: #ff4757; color: white; padding: 8px 15px; font-size: 14px; }
+        button:disabled { background: #ccc !important; }
+
+        /* Стили постов */
         .post { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 15px; border-radius: 8px; width: 100%; max-width: 500px; position: relative; animation: fadeIn 0.3s ease; }
+        .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
         .actions { display: flex; gap: 10px; margin-top: 10px; }
-        .like-btn, .del-btn { cursor: pointer; border: none; padding: 5px 12px; border-radius: 20px; font-size: 14px; transition: 0.2s; }
-        .like-btn { background: #e7f3ff; color: #007bff; }
-        .del-btn { background: #fff1f0; color: #ff4d4f; }
-        .time { font-size: 11px; color: #999; float: right; }
+        .like-btn { background: #e7f3ff; color: #007bff; padding: 5px 12px; border-radius: 20px; }
+        .del-btn { background: #fff1f0; color: #ff4d4f; padding: 5px 12px; border-radius: 20px; }
+        .time { font-size: 11px; color: #999; margin-left: auto; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h3>Панель управления</h3>
-    <input type="text" id="name" placeholder="Имя профиля">
-    <input type="email" id="email" placeholder="Рабочий Email">
+<div class="container" style="text-align: center;">
+    <button id="loginBtn">Войти через Google</button>
+    <div id="userInfo" style="display: none;">
+        <div class="auth-bar">
+            <img id="userPhoto" class="user-avatar" src="" alt="Avatar">
+            <span id="userName" style="font-weight: bold;"></span>
+            <button id="logoutBtn">Выйти</button>
+        </div>
+    </div>
+</div>
+
+<div id="messageForm" class="container" style="display: none;">
+    <h3>Что у вас нового?</h3>
+    <input type="text" id="content" placeholder="Ваше сообщение...">
     <button id="mainBtn">Опубликовать в облако</button>
 </div>
 
 <div class="container" style="padding: 15px;">
-    <input type="text" id="searchInput" placeholder="Поиск по точному имени..." oninput="filterData()">
+    <input type="text" id="searchInput" placeholder="Поиск по автору (точное имя)..." oninput="filterData()">
 </div>
 
 <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { 
-        getFirestore, collection, addDoc, query, orderBy, onSnapshot, 
-        serverTimestamp, updateDoc, doc, increment, deleteDoc, where 
-    } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, doc, increment, deleteDoc, where } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyCUbl1XEBNtPBmyMAY8D0pnJBUWhjFz8nI",
@@ -51,64 +71,81 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
     let unsubscribe = null;
 
-    // 1. ФУНКЦИЯ УДАЛЕНИЯ (deleteDoc)
+    // --- АВТОРИЗАЦИЯ ---
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const messageForm = document.getElementById('messageForm');
+
+    loginBtn.onclick = () => signInWithPopup(auth, provider);
+    logoutBtn.onclick = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginBtn.style.display = 'none';
+            userInfo.style.display = 'block';
+            messageForm.style.display = 'block';
+            document.getElementById('userName').innerText = user.displayName;
+            document.getElementById('userPhoto').src = user.photoURL;
+        } else {
+            loginBtn.style.display = 'block';
+            userInfo.style.display = 'none';
+            messageForm.style.display = 'none';
+        }
+    });
+
+    // --- РАБОТА С ДАННЫМИ ---
     window.deletePost = async (id) => {
-        if (confirm("Удалить эту запись навсегда?")) {
-            try {
-                await deleteDoc(doc(db, "requests", id));
-            } catch (e) {
-                console.error("Ошибка при удалении:", e);
-            }
+        if (!auth.currentUser) return alert("Войдите, чтобы удалять");
+        if (confirm("Удалить запись?")) {
+            await deleteDoc(doc(db, "requests", id));
         }
     };
 
-    // 2. ФУНКЦИЯ ЛАЙКА (Atomic increment)
     window.processLike = async (id) => {
-        const docRef = doc(db, "requests", id);
-        await updateDoc(docRef, { likes: increment(1) });
+        if (!auth.currentUser) return alert("Войдите, чтобы ставить лайки");
+        await updateDoc(doc(db, "requests", id), { likes: increment(1) });
     };
 
-    // 3. ФУНКЦИЯ ПУБЛИКАЦИИ
     document.getElementById('mainBtn').onclick = async () => {
-        const nameVal = document.getElementById('name').value;
-        const emailVal = document.getElementById('email').value;
-        
-        if(!nameVal || !emailVal) return alert("Заполните поля");
+        const content = document.getElementById('content').value;
+        if (!content) return alert("Напишите что-нибудь");
 
         const btn = document.getElementById('mainBtn');
         btn.disabled = true;
         try {
             await addDoc(collection(db, "requests"), {
-                name: nameVal,
-                email: emailVal,
+                name: auth.currentUser.displayName,
+                email: auth.currentUser.email,
+                photo: auth.currentUser.photoURL,
+                text: content,
                 likes: 0,
                 timestamp: serverTimestamp()
             });
-            document.getElementById('email').value = "";
+            document.getElementById('content').value = "";
         } catch (e) {
-            alert("Ошибка доступа. Проверьте правила Firestore.");
+            alert("Ошибка доступа!");
         }
         btn.disabled = false;
     };
 
-    // 4. ФУНКЦИЯ ФИЛЬТРАЦИИ И ОТОБРАЖЕНИЯ (Real-time)
+    // --- ПОИСК И ЛЕНТА ---
     window.filterData = () => {
         const term = document.getElementById('searchInput').value.trim();
         loadFeed(term);
     };
 
     function loadFeed(filterTerm = "") {
-        // Если есть подписка — отменяем её перед созданием новой
         if (unsubscribe) unsubscribe();
 
         let q;
         if (filterTerm) {
-            // Фильтрация по точному совпадению имени
             q = query(collection(db, "requests"), where("name", "==", filterTerm));
         } else {
-            // Обычный запрос с сортировкой по времени
             q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
         }
 
@@ -117,12 +154,15 @@
             feed.innerHTML = "";
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                const date = data.timestamp?.toDate().toLocaleString() || 'Загрузка...';
+                const date = data.timestamp?.toDate().toLocaleString() || '...';
                 feed.innerHTML += `
                     <div class="post">
-                        <span class="time">${date}</span>
-                        <b>${data.name}</b>
-                        <p style="margin: 5px 0;">${data.email}</p>
+                        <div class="post-header">
+                            <img src="${data.photo || 'https://via.placeholder.com/30'}" class="post-avatar" style="width:30px; border-radius:50%">
+                            <b>${data.name}</b>
+                            <span class="time">${date}</span>
+                        </div>
+                        <p style="margin: 5px 0;">${data.text || data.email}</p>
                         <div class="actions">
                             <button class="like-btn" onclick="processLike('${doc.id}')">👍 ${data.likes || 0}</button>
                             <button class="del-btn" onclick="deletePost('${doc.id}')">🗑 Удалить</button>
@@ -133,7 +173,6 @@
         });
     }
 
-    // Инициализация ленты при загрузке
     loadFeed();
 </script>
 </body>
