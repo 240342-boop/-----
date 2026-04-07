@@ -6,67 +6,48 @@
     <title>Firebase Chat App</title>
     <style>
         body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        
-        /* Авторизация */
+        .container { width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; box-sizing: border-box; }
         .auth-bar { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
-        .user-info-mini { display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 35px; height: 35px; border-radius: 50%; object-fit: cover; }
-        
-        /* Вкладки и поиск */
-        .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+        .user-avatar { width: 35px; height: 35px; border-radius: 50%; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; width: 100%; max-width: 500px; }
         .tab-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; background: #e4e6eb; font-weight: 600; }
         .tab-btn.active { background: #0084ff; color: white; }
-
-        /* Окно чата */
-        #feed { width: 100%; max-width: 500px; height: 400px; overflow-y: auto; background: #fff; border-radius: 12px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; border: 1px solid #eee; }
-        
-        /* Бабблы сообщений */
-        .msg { max-width: 75%; padding: 10px 15px; border-radius: 18px; font-size: 14px; line-height: 1.4; position: relative; word-wrap: break-word; }
+        #feed { width: 100%; height: 400px; overflow-y: auto; background: #fff; border-radius: 12px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; border: 1px solid #eee; }
+        .msg { max-width: 75%; padding: 10px 15px; border-radius: 18px; font-size: 14px; position: relative; word-wrap: break-word; }
         .msg.sent { align-self: flex-end; background: #0084ff; color: white; border-bottom-right-radius: 4px; }
         .msg.received { align-self: flex-start; background: #e4e6eb; color: #050505; border-bottom-left-radius: 4px; }
         .msg-info { font-size: 10px; opacity: 0.7; margin-top: 4px; display: block; text-align: right; }
-
-        /* Поле ввода как на скриншоте */
         .input-area { display: flex; gap: 10px; align-items: center; margin-top: 15px; background: white; padding: 10px; border-radius: 12px; width: 100%; max-width: 500px; box-sizing: border-box; }
-        .input-area input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 20px; outline: none; transition: 0.2s; }
-        .input-area input:focus { border-color: #0084ff; }
-        .send-btn { background: #0084ff; color: white; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; flex-shrink: 0; }
-        .send-btn:disabled { background: #ccc; }
-
-        #recipientArea { margin-bottom: 5px; }
-        #recipientEmail { border-radius: 8px; border: 1px solid #ddd; padding: 8px; width: 100%; box-sizing: border-box; font-size: 13px; }
-        
-        h4 { margin: 0 0 10px 0; font-size: 16px; color: #1c1e21; }
+        .input-area input { flex: 1; border: 1px solid #ddd; padding: 12px; border-radius: 20px; outline: none; }
+        .send-btn { background: #0084ff; color: white; width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        #recipientEmail { border-radius: 8px; border: 1px solid #ddd; padding: 8px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <button id="loginBtn" style="width:100%; padding: 12px; background:#0084ff; color:white; border:none; border-radius:8px; cursor:pointer;">Войти через Google</button>
+    <button id="loginBtn" style="width:100%; padding:12px; background:#0084ff; color:white; border:none; border-radius:8px; cursor:pointer;">Войти через Google</button>
     <div id="userInfo" style="display: none;" class="auth-bar">
-        <div class="user-info-mini">
+        <div style="display:flex; align-items:center; gap:10px;">
             <img id="userPhoto" class="user-avatar" src="">
-            <span id="userName" style="font-weight: 600;"></span>
+            <span id="userName" style="font-weight:600;"></span>
         </div>
-        <button id="logoutBtn" style="background:none; color:#ff4757; border:none; cursor:pointer; font-size:13px;">Выйти</button>
+        <button id="logoutBtn" style="background:none; color:#ff4757; border:none; cursor:pointer;">Выйти</button>
     </div>
 </div>
 
-<div class="container" style="background: transparent; box-shadow: none; padding: 0;">
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('feed')">Общая лента</button>
-        <button class="tab-btn" onclick="switchTab('dm')">Личный чат</button>
-    </div>
+<div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('feed')">Общая лента</button>
+    <button class="tab-btn" onclick="switchTab('dm')">Личный чат</button>
 </div>
 
-<div class="container" id="chatTitleBox">
-    <h4 id="chatHeader">Чат: Общая лента</h4>
+<div class="container">
     <div id="recipientArea" style="display: none;">
-        <input type="email" id="recipientEmail" placeholder="Email собеседника...">
+        <input type="email" id="recipientEmail" placeholder="Email получателя (например: 240342@turan-edu.kz)">
     </div>
     <div id="feed">
-        </div>
+        <p style="text-align:center; color:#999; margin-top:20px;">Загрузка...</p>
+    </div>
 </div>
 
 <div id="messageForm" class="input-area" style="display: none;">
@@ -78,7 +59,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, deleteDoc, where, or, limit } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, where, or, limit } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -94,32 +75,22 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
-    
     let unsubscribe = null;
     let currentTab = 'feed';
 
-    // Элементы
-    const loginBtn = document.getElementById('loginBtn');
-    const userInfo = document.getElementById('userInfo');
-    const messageForm = document.getElementById('messageForm');
-    const feedContainer = document.getElementById('feed');
-
-    loginBtn.onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
-
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            loginBtn.style.display = 'none';
-            userInfo.style.display = 'flex';
-            messageForm.style.display = 'flex';
+            document.getElementById('loginBtn').style.display = 'none';
+            document.getElementById('userInfo').style.display = 'flex';
+            document.getElementById('messageForm').style.display = 'flex';
             document.getElementById('userName').innerText = user.displayName;
             document.getElementById('userPhoto').src = user.photoURL;
             loadData();
         } else {
-            loginBtn.style.display = 'block';
-            userInfo.style.display = 'none';
-            messageForm.style.display = 'none';
-            feedContainer.innerHTML = "<p style='text-align:center; color:#999;'>Войдите, чтобы видеть чат</p>";
+            document.getElementById('loginBtn').style.display = 'block';
+            document.getElementById('userInfo').style.display = 'none';
+            document.getElementById('messageForm').style.display = 'none';
+            document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
         }
     });
 
@@ -127,78 +98,75 @@
         currentTab = tab;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         event.target.classList.add('active');
-        
-        const recArea = document.getElementById('recipientArea');
-        const header = document.getElementById('chatHeader');
-        
-        if (tab === 'dm') {
-            recArea.style.display = 'block';
-            header.innerText = "Личные сообщения";
-        } else {
-            recArea.style.display = 'none';
-            header.innerText = "Чат: Общая лента";
-        }
+        document.getElementById('recipientArea').style.display = (tab === 'dm') ? 'block' : 'none';
         loadData();
     };
 
     document.getElementById('mainBtn').onclick = async () => {
         const text = document.getElementById('content').value.trim();
-        const recipient = document.getElementById('recipientEmail').value.trim();
+        const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
         
         if (!text) return;
-        if (currentTab === 'dm' && !recipient) return alert("Введите email получателя");
+        if (currentTab === 'dm' && !recipient) return alert("Укажите Email!");
 
         try {
-            const colName = currentTab === 'dm' ? "messages" : "requests";
+            const colName = (currentTab === 'dm') ? "messages" : "requests";
             await addDoc(collection(db, colName), {
                 name: auth.currentUser.displayName,
-                email: auth.currentUser.email,
+                email: auth.currentUser.email.toLowerCase(),
                 photo: auth.currentUser.photoURL,
                 text: text,
-                recipientEmail: currentTab === 'dm' ? recipient : null,
+                recipientEmail: (currentTab === 'dm') ? recipient : null,
                 timestamp: serverTimestamp()
             });
             document.getElementById('content').value = "";
-            feedContainer.scrollTop = feedContainer.scrollHeight;
-        } catch (e) { alert("Ошибка отправки"); }
+        } catch (e) {
+            console.error("Ошибка Firebase:", e);
+            alert("Ошибка: " + e.message);
+        }
     };
 
     function loadData() {
         if (unsubscribe) unsubscribe();
+        const feed = document.getElementById('feed');
         
         let q;
         if (currentTab === 'dm') {
+            const myEmail = auth.currentUser.email.toLowerCase();
             q = query(
                 collection(db, "messages"),
-                or(
-                    where("email", "==", auth.currentUser.email),
-                    where("recipientEmail", "==", auth.currentUser.email)
-                ),
-                orderBy("timestamp", "asc") // Для чата лучше старые сверху (asc)
+                or(where("email", "==", myEmail), where("recipientEmail", "==", myEmail)),
+                orderBy("timestamp", "asc")
             );
         } else {
             q = query(collection(db, "requests"), orderBy("timestamp", "asc"), limit(50));
         }
 
         unsubscribe = onSnapshot(q, (snapshot) => {
-            feedContainer.innerHTML = "";
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const isMine = data.email === auth.currentUser.email;
-                const time = data.timestamp?.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) || '...';
+            feed.innerHTML = "";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const isMine = data.email === auth.currentUser.email.toLowerCase();
+                const time = data.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || '';
                 
-                const msgDiv = document.createElement('div');
-                msgDiv.className = `msg ${isMine ? 'sent' : 'received'}`;
-                msgDiv.innerHTML = `
-                    ${!isMine && currentTab === 'feed' ? `<b style="display:block;font-size:11px;margin-bottom:3px;">${data.name}</b>` : ''}
+                const div = document.createElement('div');
+                div.className = `msg ${isMine ? 'sent' : 'received'}`;
+                div.innerHTML = `
+                    ${!isMine && currentTab === 'feed' ? `<small><b>${data.name}</b></small><br>` : ''}
                     ${data.text}
                     <span class="msg-info">${time}</span>
                 `;
-                feedContainer.appendChild(msgDiv);
+                feed.appendChild(div);
             });
-            feedContainer.scrollTop = feedContainer.scrollHeight;
+            feed.scrollTop = feed.scrollHeight;
+        }, (err) => {
+            console.error("Ошибка при чтении:", err);
+            if (err.code === 'failed-precondition') feed.innerHTML = "Нужно создать индекс (см. консоль F12)";
         });
     }
+
+    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
+    document.getElementById('logoutBtn').onclick = () => signOut(auth);
 </script>
 </body>
 </html>
