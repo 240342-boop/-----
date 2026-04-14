@@ -1,145 +1,149 @@
-<script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+<sc<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Chat</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        #userInfo { display: none; padding: 10px; background: white; align-items: center; gap: 10px; border-bottom: 1px solid #ccc; }
+        #userPhoto { width: 40px; height: 40px; border-radius: 50%; }
+        #feed { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .msg { padding: 10px; border-radius: 10px; max-width: 70%; position: relative; }
+        .sent { align-self: flex-end; background: #0084ff; color: white; }
+        .received { align-self: flex-start; background: white; border: 1px solid #ddd; }
+        .msg-info { font-size: 0.7em; opacity: 0.7; display: block; margin-top: 5px; }
+        #messageForm { display: none; padding: 20px; background: white; gap: 10px; }
+        input, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
+        .active { background: #0084ff; color: white; }
+        #loginBtn { margin: auto; padding: 15px 30px; font-size: 1.2em; cursor: pointer; }
+    </style>
+</head>
+<body>
 
-    // Замени на свои данные из настроек проекта Supabase (Project Settings -> API)
-    const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
-    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    <button id="loginBtn">Войти через Google</button>
 
-    let currentTab = 'feed';
-    let channel = null; // Для Realtime подписки
+    <div id="userInfo">
+        <img id="userPhoto" src="" alt="">
+        <span id="userName"></span>
+        <button id="logoutBtn">Выйти</button>
+    </div>
 
-    // Функция для создания общего ID чата
-    function getChatId(email1, email2) {
-        return [email1.toLowerCase(), email2.toLowerCase()].sort().join('_');
-    }
+    <div style="padding: 10px; display: flex; gap: 5px;">
+        <button class="tab-btn active" onclick="switchTab('feed')">Общий чат</button>
+        <button class="tab-btn" onclick="switchTab('dm')">Личка</button>
+    </div>
 
-    // Слушатель состояния авторизации
-    supabase.auth.onAuthStateChanged((event, session) => {
-        const user = session?.user;
-        if (user) {
-            document.getElementById('loginBtn').style.display = 'none';
-            document.getElementById('userInfo').style.display = 'flex';
-            document.getElementById('messageForm').style.display = 'flex';
-            document.getElementById('userName').innerText = user.user_metadata.full_name;
-            document.getElementById('userPhoto').src = user.user_metadata.avatar_url;
-            loadData();
-        } else {
-            document.getElementById('loginBtn').style.display = 'block';
-            document.getElementById('userInfo').style.display = 'none';
-            document.getElementById('messageForm').style.display = 'none';
-            document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
+    <div id="recipientArea" style="display:none; padding: 10px;">
+        <input type="email" id="recipientEmail" placeholder="Email получателя">
+    </div>
+
+    <div id="feed">Войдите, чтобы видеть сообщения</div>
+
+    <div id="messageForm">
+        <input type="text" id="content" placeholder="Сообщение..." style="flex-grow: 1;">
+        <button id="mainBtn">Отправить</button>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+        // ВСТАВЬ СВОИ ДАННЫЕ ТУТ
+        const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentTab = 'feed';
+        let channel = null;
+
+        function getChatId(email1, email2) {
+            return [email1.toLowerCase(), email2.toLowerCase()].sort().join('_');
         }
-    });
 
-    // Вход и Выход
-    document.getElementById('loginBtn').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
-    document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut();
+        supabase.auth.onAuthStateChanged((event, session) => {
+            const user = session?.user;
+            if (user) {
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('userInfo').style.display = 'flex';
+                document.getElementById('messageForm').style.display = 'flex';
+                document.getElementById('userName').innerText = user.user_metadata.full_name;
+                document.getElementById('userPhoto').src = user.user_metadata.avatar_url;
+                loadData();
+            } else {
+                document.getElementById('loginBtn').style.display = 'block';
+                document.getElementById('userInfo').style.display = 'none';
+                document.getElementById('messageForm').style.display = 'none';
+                document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
+            }
+        });
 
-    window.switchTab = (tab) => {
-        currentTab = tab;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        if (event) event.target.classList.add('active');
-        document.getElementById('recipientArea').style.display = (tab === 'dm') ? 'block' : 'none';
-        loadData();
-    };
+        document.getElementById('loginBtn').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
+        document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut();
 
-    document.getElementById('recipientEmail').oninput = () => {
-        if(currentTab === 'dm') loadData();
-    };
-
-    // Отправка сообщения
-    document.getElementById('mainBtn').onclick = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const text = document.getElementById('content').value.trim();
-        const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
-        
-        if (!text) return;
-        if (currentTab === 'dm' && !recipient) return alert("Укажите Email!");
-
-        const isDM = currentTab === 'dm';
-        const table = isDM ? "messages" : "requests";
-        const myEmail = user.email.toLowerCase();
-
-        const messageData = {
-            name: user.user_metadata.full_name,
-            email: myEmail,
-            photo: user.user_metadata.avatar_url,
-            text: text,
-            // timestamp в Postgres создается автоматически (column default: now())
+        window.switchTab = (tab) => {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('recipientArea').style.display = (tab === 'dm') ? 'block' : 'none';
+            loadData();
         };
 
-        if (isDM) {
-            messageData.recipient_email = recipient;
-            messageData.chat_id = getChatId(myEmail, recipient);
-        }
+        document.getElementById('recipientEmail').oninput = () => {
+            if(currentTab === 'dm') loadData();
+        };
 
-        const { error } = await supabase.from(table).insert([messageData]);
-        
-        if (error) {
-            console.error("Ошибка Supabase:", error);
-            alert("Ошибка: " + error.message);
-        } else {
-            document.getElementById('content').value = "";
-        }
-    };
+        document.getElementById('mainBtn').onclick = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            const text = document.getElementById('content').value.trim();
+            const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
+            if (!text || (currentTab === 'dm' && !recipient)) return;
 
-    // Загрузка и Realtime
-    async function loadData() {
-        // Очищаем старую подписку если есть
-        if (channel) supabase.removeChannel(channel);
+            const table = (currentTab === 'dm') ? "messages" : "requests";
+            const messageData = {
+                name: user.user_metadata.full_name,
+                email: user.email.toLowerCase(),
+                photo: user.user_metadata.avatar_url,
+                text: text
+            };
 
-        const { data: { user } } = await supabase.auth.getUser();
-        const feed = document.getElementById('feed');
-        const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
-        
-        const table = (currentTab === 'dm') ? "messages" : "requests";
-        
-        // 1. Первоначальная загрузка данных
-        let query = supabase.from(table).select('*').order('created_at', { ascending: true });
-
-        if (currentTab === 'dm') {
-            if (!recipient) {
-                feed.innerHTML = "<p style='text-align:center; color:#999;'>Введите email...</p>";
-                return;
+            if (currentTab === 'dm') {
+                messageData.recipient_email = recipient;
+                messageData.chat_id = getChatId(user.email, recipient);
             }
-            query = query.eq('chat_id', getChatId(user.email, recipient));
-        } else {
-            query = query.limit(50);
+
+            const { error } = await supabase.from(table).insert([messageData]);
+            if (!error) document.getElementById('content').value = "";
+        };
+
+        async function loadData() {
+            if (channel) supabase.removeChannel(channel);
+            const { data: { user } } = await supabase.auth.getUser();
+            const table = (currentTab === 'dm') ? "messages" : "requests";
+            
+            let query = supabase.from(table).select('*').order('created_at', { ascending: true });
+            if (currentTab === 'dm') {
+                const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
+                if (!recipient) return document.getElementById('feed').innerHTML = "Введите email...";
+                query = query.eq('chat_id', getChatId(user.email, recipient));
+            }
+
+            const { data } = await query;
+            renderMessages(data || [], user);
+
+            channel = supabase.channel('changes').on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: table }, () => loadData()).subscribe();
         }
 
-        const { data, error } = await query;
-        if (error) return console.error(error);
-        
-        renderMessages(data, user);
-
-        // 2. Подписка на новые сообщения (Realtime)
-        channel = supabase.channel('public:' + table)
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: table }, (payload) => {
-                // Просто перезагружаем данные для простоты или пушим в массив
-                loadData(); 
-            })
-            .subscribe();
-    }
-
-    function renderMessages(messages, user) {
-        const feed = document.getElementById('feed');
-        feed.innerHTML = "";
-        messages.forEach(msg => {
-            const isMine = msg.email === user.email.toLowerCase();
-            const time = new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            
-            const div = document.createElement('div');
-            div.className = `msg ${isMine ? 'sent' : 'received'}`;
-            div.innerHTML = `
-                ${!isMine && currentTab === 'feed' ? `<small><b>${msg.name}</b></small><br>` : ''}
-                ${msg.text}
-                <span class="msg-info">${time}</span>
-            `;
-            feed.appendChild(div);
-        });
-        feed.scrollTop = feed.scrollHeight;
-    }
-</script>
+        function renderMessages(messages, user) {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = messages.map(msg => `
+                <div class="msg ${msg.email === user.email.toLowerCase() ? 'sent' : 'received'}">
+                    ${currentTab === 'feed' && msg.email !== user.email ? `<small><b>${msg.name}</b></small><br>` : ''}
+                    ${msg.text}
+                </div>
+            `).join('');
+            feed.scrollTop = feed.scrollHeight;
+        }
+    </script>
+</body>
+</html>
