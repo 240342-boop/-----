@@ -60,22 +60,24 @@
             return [email1.toLowerCase(), email2.toLowerCase()].sort().join('_');
         }
 
-        supabase.auth.onAuthStateChanged((event, session) => {
-            const user = session?.user;
-            if (user) {
-                document.getElementById('loginBtn').style.display = 'none';
-                document.getElementById('userInfo').style.display = 'flex';
-                document.getElementById('messageForm').style.display = 'flex';
-                document.getElementById('userName').innerText = user.user_metadata.full_name;
-                document.getElementById('userPhoto').src = user.user_metadata.avatar_url;
-                loadData();
-            } else {
-                document.getElementById('loginBtn').style.display = 'block';
-                document.getElementById('userInfo').style.display = 'none';
-                document.getElementById('messageForm').style.display = 'none';
-                document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
-            }
-        });
+      // Проверка авторизации (исправленный метод)
+supabase.auth.onAuthStateChange((event, session) => {
+    const user = session?.user;
+    if (user) {
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('userInfo').style.display = 'flex';
+        document.getElementById('messageForm').style.display = 'flex';
+        // В Supabase v2 данные лежат в user_metadata
+        document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
+        document.getElementById('userPhoto').src = user.user_metadata.avatar_url || '';
+        loadData();
+    } else {
+        document.getElementById('loginBtn').style.display = 'block';
+        document.getElementById('userInfo').style.display = 'none';
+        document.getElementById('messageForm').style.display = 'none';
+        document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
+    }
+});
 
         document.getElementById('loginBtn').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
         document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut();
