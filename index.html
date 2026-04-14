@@ -1,48 +1,80 @@
-<sc<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Supabase Chat</title>
+    <title>Мой статус / Группа</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; display: flex; flex-direction: column; height: 100vh; margin: 0; }
-        #userInfo { display: none; padding: 10px; background: white; align-items: center; gap: 10px; border-bottom: 1px solid #ccc; }
-        #userPhoto { width: 40px; height: 40px; border-radius: 50%; }
-        #feed { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .msg { padding: 10px; border-radius: 10px; max-width: 70%; position: relative; }
-        .sent { align-self: flex-end; background: #0084ff; color: white; }
-        .received { align-self: flex-start; background: white; border: 1px solid #ddd; }
-        .msg-info { font-size: 0.7em; opacity: 0.7; display: block; margin-top: 5px; }
-        #messageForm { display: none; padding: 20px; background: white; gap: 10px; }
-        input, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-        .active { background: #0084ff; color: white; }
-        #loginBtn { margin: auto; padding: 15px 30px; font-size: 1.2em; cursor: pointer; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Общие стили для карточек (белые блоки с тенью) */
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .card-title { font-size: 1.3em; font-weight: 600; margin-bottom: 5px; margin-top: 0; }
+        .card-subtitle { font-size: 0.9em; color: #666; margin-bottom: 20px; display: block; }
+        
+        /* Сетка кнопок статусов (Мой профиль) */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        
+        /* Базовая кнопка */
+        .status-btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: none; padding: 12px; border-radius: 6px; color: white; cursor: pointer; transition: opacity 0.2s; text-decoration: none; font-weight: 500; font-size: 14px; }
+        .status-btn:hover { opacity: 0.85; }
+        .status-btn:active { transform: translateY(1px); }
+        
+        /* Цвета кнопок (как на скриншоте) */
+        .btn-green { background-color: #38a169; } /* Учусь */
+        .btn-yellow { background-color: #ecc94b; color: #333; } /* Кофе */
+        .btn-blue { background-color: #3182ce; } /* В игре */
+        .btn-gray { background-color: #718096; } /* Дома */
+
+        /* Список группы */
+        #groupList { display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Элемент пользователя в списке */
+        .user-item { display: flex; align-items: start; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .user-item:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        /* Цветная точка статуса */
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; margin-top: 6px; flex-shrink: 0; }
+        
+        /* Информация о пользователе (имя + статус) */
+        .user-info { flex-grow: 1; }
+        .user-name { font-weight: 600; font-size: 1.0em; margin-bottom: 2px; display: block;}
+        .user-status { font-size: 0.85em; color: #777; line-height: 1.4; display: block; }
     </style>
 </head>
 <body>
 
-    <button id="loginBtn">Войти через Google</button>
+    <div class="container">
+        
+        <div class="card">
+            <h2 class="card-title">Мой профиль</h2>
+            <span class="card-subtitle" id="myInfo">Загрузка...</span>
+            
+            <div class="status-grid">
+                <button onclick="changeStatus('🍎 Учусь', '#38a169')" class="status-btn btn-green">
+                    <i class="fas fa-apple-alt"></i> Учусь
+                </button>
+                <button onclick="changeStatus('🍵 Кофе-брейк', '#ecc94b')" class="status-btn btn-yellow">
+                    <i class="fas fa-coffee"></i> Кофе
+                </button>
+                <button onclick="changeStatus('🎮 В игре', '#3182ce')" class="status-btn btn-blue">
+                    <i class="fas fa-gamepad"></i> В игре
+                </button>
+                <button onclick="changeStatus('🏠 Дома', '#718096')" class="status-btn btn-gray">
+                    <i class="fas fa-home"></i> Дома
+                </button>
+            </div>
+        </div>
 
-    <div id="userInfo">
-        <img id="userPhoto" src="" alt="">
-        <span id="userName"></span>
-        <button id="logoutBtn">Выйти</button>
-    </div>
+        <div class="card">
+            <h2 class="card-title">Монитор группы</h2>
+            <div id="groupList">
+                <p style="text-align: center; color: #888;">Загрузка списка группы...</p>
+            </div>
+        </div>
 
-    <div style="padding: 10px; display: flex; gap: 5px;">
-        <button class="tab-btn active" onclick="switchTab('feed')">Общий чат</button>
-        <button class="tab-btn" onclick="switchTab('dm')">Личка</button>
-    </div>
-
-    <div id="recipientArea" style="display:none; padding: 10px;">
-        <input type="email" id="recipientEmail" placeholder="Email получателя">
-    </div>
-
-    <div id="feed">Войдите, чтобы видеть сообщения</div>
-
-    <div id="messageForm">
-        <input type="text" id="content" placeholder="Сообщение..." style="flex-grow: 1;">
-        <button id="mainBtn">Отправить</button>
     </div>
 
     <script type="module">
@@ -53,99 +85,60 @@
         const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentTab = 'feed';
-        let channel = null;
+        // ID того пользователя, чей статус меняем (на скрине был этот)
+        const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122'; 
 
-        function getChatId(email1, email2) {
-            return [email1.toLowerCase(), email2.toLowerCase()].sort().join('_');
-        }
+        // Глобальная функция смены статуса
+        window.changeStatus = async (text, color) => {
+            const { error } = await supabase
+                .from("profiles")
+                .update({ status: text, color: color }) // Убедись, что колонки 'status' и 'color' есть в БД
+                .eq('id', MY_ID);
 
-      // Проверка авторизации (исправленный метод)
-supabase.auth.onAuthStateChange((event, session) => {
-    const user = session?.user;
-    if (user) {
-        document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('userInfo').style.display = 'flex';
-        document.getElementById('messageForm').style.display = 'flex';
-        // В Supabase v2 данные лежат в user_metadata
-        document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
-        document.getElementById('userPhoto').src = user.user_metadata.avatar_url || '';
-        loadData();
-    } else {
-        document.getElementById('loginBtn').style.display = 'block';
-        document.getElementById('userInfo').style.display = 'none';
-        document.getElementById('messageForm').style.display = 'none';
-        document.getElementById('feed').innerHTML = "Войдите, чтобы видеть чат";
-    }
-});
-
-        document.getElementById('loginBtn').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
-        document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut();
-
-        window.switchTab = (tab) => {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById('recipientArea').style.display = (tab === 'dm') ? 'block' : 'none';
-            loadData();
+            if (error) {
+                console.error(error);
+                alert("Ошибка! Проверьте RLS политики.");
+            } else {
+                fetchGroup(); // Сразу обновляем список
+            }
         };
 
-        document.getElementById('recipientEmail').oninput = () => {
-            if(currentTab === 'dm') loadData();
-        };
+        // Загрузка списка группы
+        async function fetchGroup() {
+            const { data, error } = await supabase
+                .from("profiles")
+                .select("*")
+                .order('username', { ascending: true }); // Сортировка по алфавиту
 
-        document.getElementById('mainBtn').onclick = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            const text = document.getElementById('content').value.trim();
-            const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
-            if (!text || (currentTab === 'dm' && !recipient)) return;
-
-            const table = (currentTab === 'dm') ? "messages" : "requests";
-            const messageData = {
-                name: user.user_metadata.full_name,
-                email: user.email.toLowerCase(),
-                photo: user.user_metadata.avatar_url,
-                text: text
-            };
-
-            if (currentTab === 'dm') {
-                messageData.recipient_email = recipient;
-                messageData.chat_id = getChatId(user.email, recipient);
+            if (error) {
+                console.error(error);
+                document.getElementById('groupList').innerHTML = `<p style='color:red; text-align:center;'>Ошибка загрузки</p>`;
+                return;
             }
 
-            const { error } = await supabase.from(table).insert([messageData]);
-            if (!error) document.getElementById('content').value = "";
-        };
-
-        async function loadData() {
-            if (channel) supabase.removeChannel(channel);
-            const { data: { user } } = await supabase.auth.getUser();
-            const table = (currentTab === 'dm') ? "messages" : "requests";
-            
-            let query = supabase.from(table).select('*').order('created_at', { ascending: true });
-            if (currentTab === 'dm') {
-                const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
-                if (!recipient) return document.getElementById('feed').innerHTML = "Введите email...";
-                query = query.eq('chat_id', getChatId(user.email, recipient));
-            }
-
-            const { data } = await query;
-            renderMessages(data || [], user);
-
-            channel = supabase.channel('changes').on('postgres_changes', 
-                { event: 'INSERT', schema: 'public', table: table }, () => loadData()).subscribe();
-        }
-
-        function renderMessages(messages, user) {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = messages.map(msg => `
-                <div class="msg ${msg.email === user.email.toLowerCase() ? 'sent' : 'received'}">
-                    ${currentTab === 'feed' && msg.email !== user.email ? `<small><b>${msg.name}</b></small><br>` : ''}
-                    ${msg.text}
+            const list = document.getElementById('groupList');
+            // Отрисовка списка (также как на скрине)
+            list.innerHTML = data.map(user => `
+                <div class="user-item">
+                    <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+                    
+                    <div class="user-info">
+                        <strong class="user-name">${user.username}</strong>
+                        <small class="user-status">${user.status || "Статус не задан"}</small>
+                    </div>
                 </div>
             `).join('');
-            feed.scrollTop = feed.scrollHeight;
+
+            // Приветствие (Мой профиль)
+            const me = data.find(s => s.id === MY_ID);
+            if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
         }
+
+        // Запускаем при загрузке
+        fetchGroup();
+
+        // Обновляем раз в 5 секунд (как на скрине)
+        setInterval(fetchGroup, 5000);
     </script>
 </body>
 </html>
