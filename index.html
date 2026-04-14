@@ -1,36 +1,28 @@
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, where, limit } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyCUbl1XEBNtPBmyMAY8D0pnJBUWhjFz8nI",
-        authDomain: "gfgfgrt-a2c34.firebaseapp.com",
-        projectId: "gfgfgrt-a2c34",
-        storageBucket: "gfgfgrt-a2c34.firebasestorage.app",
-        messagingSenderId: "210276895649",
-        appId: "1:210276895649:web:fc7329085b24aef248d9e0"
-    };
+    // Замени на свои данные из настроек проекта Supabase (Project Settings -> API)
+    const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-    let unsubscribe = null;
     let currentTab = 'feed';
+    let channel = null; // Для Realtime подписки
 
-    // Функция для создания общего ID чата для двух людей
+    // Функция для создания общего ID чата
     function getChatId(email1, email2) {
-        return [email1, email2].sort().join('_');
+        return [email1.toLowerCase(), email2.toLowerCase()].sort().join('_');
     }
 
-    onAuthStateChanged(auth, (user) => {
+    // Слушатель состояния авторизации
+    supabase.auth.onAuthStateChanged((event, session) => {
+        const user = session?.user;
         if (user) {
             document.getElementById('loginBtn').style.display = 'none';
             document.getElementById('userInfo').style.display = 'flex';
             document.getElementById('messageForm').style.display = 'flex';
-            document.getElementById('userName').innerText = user.displayName;
-            document.getElementById('userPhoto').src = user.photoURL;
+            document.getElementById('userName').innerText = user.user_metadata.full_name;
+            document.getElementById('userPhoto').src = user.user_metadata.avatar_url;
             loadData();
         } else {
             document.getElementById('loginBtn').style.display = 'block';
@@ -40,100 +32,114 @@
         }
     });
 
+    // Вход и Выход
+    document.getElementById('loginBtn').onclick = () => supabase.auth.signInWithOAuth({ provider: 'google' });
+    document.getElementById('logoutBtn').onclick = () => supabase.auth.signOut();
+
     window.switchTab = (tab) => {
         currentTab = tab;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        event.target.classList.add('active');
+        if (event) event.target.classList.add('active');
         document.getElementById('recipientArea').style.display = (tab === 'dm') ? 'block' : 'none';
         loadData();
     };
 
-    // Слушатель изменения Email получателя, чтобы обновлять чат в реальном времени при вводе
     document.getElementById('recipientEmail').oninput = () => {
         if(currentTab === 'dm') loadData();
     };
 
+    // Отправка сообщения
     document.getElementById('mainBtn').onclick = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
         const text = document.getElementById('content').value.trim();
         const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
         
         if (!text) return;
         if (currentTab === 'dm' && !recipient) return alert("Укажите Email!");
 
-        try {
-            const myEmail = auth.currentUser.email.toLowerCase();
-            const isDM = currentTab === 'dm';
-            const colName = isDM ? "messages" : "requests";
-            
-            const messageData = {
-                name: auth.currentUser.displayName,
-                email: myEmail,
-                photo: auth.currentUser.photoURL,
-                text: text,
-                timestamp: serverTimestamp()
-            };
+        const isDM = currentTab === 'dm';
+        const table = isDM ? "messages" : "requests";
+        const myEmail = user.email.toLowerCase();
 
-            if (isDM) {
-                messageData.recipientEmail = recipient;
-                // Добавляем общий ID чата
-                messageData.chatId = getChatId(myEmail, recipient);
-            }
+        const messageData = {
+            name: user.user_metadata.full_name,
+            email: myEmail,
+            photo: user.user_metadata.avatar_url,
+            text: text,
+            // timestamp в Postgres создается автоматически (column default: now())
+        };
 
-            await addDoc(collection(db, colName), messageData);
+        if (isDM) {
+            messageData.recipient_email = recipient;
+            messageData.chat_id = getChatId(myEmail, recipient);
+        }
+
+        const { error } = await supabase.from(table).insert([messageData]);
+        
+        if (error) {
+            console.error("Ошибка Supabase:", error);
+            alert("Ошибка: " + error.message);
+        } else {
             document.getElementById('content').value = "";
-        } catch (e) {
-            console.error("Ошибка Firebase:", e);
-            alert("Ошибка: " + e.message);
         }
     };
 
-    function loadData() {
-        if (unsubscribe) unsubscribe();
+    // Загрузка и Realtime
+    async function loadData() {
+        // Очищаем старую подписку если есть
+        if (channel) supabase.removeChannel(channel);
+
+        const { data: { user } } = await supabase.auth.getUser();
         const feed = document.getElementById('feed');
         const recipient = document.getElementById('recipientEmail').value.trim().toLowerCase();
         
-        let q;
+        const table = (currentTab === 'dm') ? "messages" : "requests";
+        
+        // 1. Первоначальная загрузка данных
+        let query = supabase.from(table).select('*').order('created_at', { ascending: true });
+
         if (currentTab === 'dm') {
             if (!recipient) {
-                feed.innerHTML = "<p style='text-align:center; color:#999;'>Введите email, чтобы начать переписку</p>";
+                feed.innerHTML = "<p style='text-align:center; color:#999;'>Введите email...</p>";
                 return;
             }
-            const myEmail = auth.currentUser.email.toLowerCase();
-            const chatId = getChatId(myEmail, recipient);
-            
-            // Простой запрос по chatId не требует составного индекса
-            q = query(
-                collection(db, "messages"),
-                where("chatId", "==", chatId),
-                orderBy("timestamp", "asc")
-            );
+            query = query.eq('chat_id', getChatId(user.email, recipient));
         } else {
-            q = query(collection(db, "requests"), orderBy("timestamp", "asc"), limit(50));
+            query = query.limit(50);
         }
 
-        unsubscribe = onSnapshot(q, (snapshot) => {
-            feed.innerHTML = "";
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                const isMine = data.email === auth.currentUser.email.toLowerCase();
-                const time = data.timestamp?.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) || '';
-                
-                const div = document.createElement('div');
-                div.className = `msg ${isMine ? 'sent' : 'received'}`;
-                div.innerHTML = `
-                    ${!isMine && currentTab === 'feed' ? `<small><b>${data.name}</b></small><br>` : ''}
-                    ${data.text}
-                    <span class="msg-info">${time}</span>
-                `;
-                feed.appendChild(div);
-            });
-            feed.scrollTop = feed.scrollHeight;
-        }, (err) => {
-            console.error("Ошибка при чтении:", err);
-            // Если индекс всё же потребуется (из-за orderBy), Firebase выдаст ссылку в консоль
-        });
+        const { data, error } = await query;
+        if (error) return console.error(error);
+        
+        renderMessages(data, user);
+
+        // 2. Подписка на новые сообщения (Realtime)
+        channel = supabase.channel('public:' + table)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: table }, (payload) => {
+                // Просто перезагружаем данные для простоты или пушим в массив
+                loadData(); 
+            })
+            .subscribe();
     }
 
-    document.getElementById('loginBtn').onclick = () => signInWithPopup(auth, provider);
-    document.getElementById('logoutBtn').onclick = () => signOut(auth);
+    function renderMessages(messages, user) {
+        const feed = document.getElementById('feed');
+        feed.innerHTML = "";
+        messages.forEach(msg => {
+            const isMine = msg.email === user.email.toLowerCase();
+            const time = new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            
+            const div = document.createElement('div');
+            div.className = `msg ${isMine ? 'sent' : 'received'}`;
+            div.innerHTML = `
+                ${!isMine && currentTab === 'feed' ? `<small><b>${msg.name}</b></small><br>` : ''}
+                ${msg.text}
+                <span class="msg-info">${time}</span>
+            `;
+            feed.appendChild(div);
+        });
+        feed.scrollTop = feed.scrollHeight;
+    }
 </script>
