@@ -8,67 +8,57 @@
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        
-        /* Общие стили для карточек (белые блоки с тенью) */
         .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .card-title { font-size: 1.3em; font-weight: 600; margin-bottom: 5px; margin-top: 0; }
         .card-subtitle { font-size: 0.9em; color: #666; margin-bottom: 20px; display: block; }
         
-        /* Сетка кнопок статусов (Мой профиль) */
         .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        
-        /* Базовая кнопка */
         .status-btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: none; padding: 12px; border-radius: 6px; color: white; cursor: pointer; transition: opacity 0.2s; text-decoration: none; font-weight: 500; font-size: 14px; }
         .status-btn:hover { opacity: 0.85; }
-        .status-btn:active { transform: translateY(1px); }
-        
-        /* Цвета кнопок (как на скриншоте) */
-        .btn-green { background-color: #38a169; } /* Учусь */
-        .btn-yellow { background-color: #ecc94b; color: #333; } /* На улице */
-        .btn-blue { background-color: #3182ce; } /* В игре */
-        .btn-gray { background-color: #718096; } /* Дома */
+        .status-btn:disabled { background-color: #ccc !important; cursor: not-allowed; }
 
-        /* Список группы */
         #groupList { display: flex; flex-direction: column; gap: 15px; }
-        
-        /* Элемент пользователя в списке */
         .user-item { display: flex; align-items: start; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
         .user-item:last-child { border-bottom: none; padding-bottom: 0; }
-        
-        /* Цветная точка статуса */
         .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; margin-top: 6px; flex-shrink: 0; }
-        
-        /* Информация о пользователе (имя + статус) */
         .user-info { flex-grow: 1; }
         .user-name { font-weight: 600; font-size: 1.0em; margin-bottom: 2px; display: block;}
         .user-status { font-size: 0.85em; color: #777; line-height: 1.4; display: block; }
+
+        .auth-section { margin-bottom: 15px; text-align: center; }
+        .btn-google { background-color: #4285F4; width: 100%; margin-bottom: 10px; }
+        .btn-logout { background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 0.8em; text-decoration: underline; padding: 0; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        
         <div class="card">
             <h2 class="card-title">Мой профиль</h2>
-            <span class="card-subtitle" id="myInfo">Загрузка...</span>
+            <span class="card-subtitle" id="myInfo">Проверка авторизации...</span>
             
-        <div class="status-grid">
-    <button onclick="changeStatus('📞 На созвоне', '#e53e3e')" class="status-btn" style="background-color: #e53e3e;">
-        <i class="fas fa-phone"></i> Созвон
-    </button>
-    
-    <button onclick="changeStatus('🍕 Перекус', '#ed8936')" class="status-btn" style="background-color: #ed8936;">
-        <i class="fas fa-pizza-slice"></i> Ем
-    </button>
-    
-    <button onclick="changeStatus('😴 Отдыхаю', '#805ad5')" class="status-btn" style="background-color: #805ad5;">
-        <i class="fas fa-moon"></i> Сплю
-    </button>
-    
-    <button onclick="changeStatus('💻 Сосредоточен', '#2c7a7b')" class="status-btn" style="background-color: #2c7a7b;">
-        <i class="fas fa-code"></i> В работе
-    </button>
-</div>
+            <div class="auth-section">
+                <button id="loginBtn" onclick="signInWithGoogle()" class="status-btn btn-google">
+                    <i class="fab fa-google"></i> Войти через Google
+                </button>
+                <button id="logoutBtn" onclick="signOut()" class="btn-logout hidden">Выйти из аккаунта</button>
+            </div>
+
+            <div id="controls" class="status-grid hidden">
+                <button onclick="changeStatus('📞 На созвоне', '#e53e3e')" class="status-btn" style="background-color: #e53e3e;">
+                    <i class="fas fa-phone"></i> Созвон
+                </button>
+                <button onclick="changeStatus('🍕 Перекус', '#ed8936')" class="status-btn" style="background-color: #ed8936;">
+                    <i class="fas fa-pizza-slice"></i> Ем
+                </button>
+                <button onclick="changeStatus('😴 Отдыхаю', '#805ad5')" class="status-btn" style="background-color: #805ad5;">
+                    <i class="fas fa-moon"></i> Сплю
+                </button>
+                <button onclick="changeStatus('💻 В работе', '#2c7a7b')" class="status-btn" style="background-color: #2c7a7b;">
+                    <i class="fas fa-code"></i> Работаю
+                </button>
+            </div>
         </div>
 
         <div class="card">
@@ -77,71 +67,95 @@
                 <p style="text-align: center; color: #888;">Загрузка списка группы...</p>
             </div>
         </div>
-
     </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // ВСТАВЬ СВОИ ДАННЫЕ ТУТ
         const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
+        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07'; // Твой ключ
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // ID того пользователя, чей статус меняем (на скрине был этот)
-        const MY_ID = '54e9a72b-8c3d-4f1a-b6e2-9d5c8a1f7e34'; 
+        let CURRENT_USER_ID = null;
 
-        // Глобальная функция смены статуса
+        // 1. Вход через Google
+        window.signInWithGoogle = async () => {
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+            if (error) alert("Ошибка: " + error.message);
+        };
+
+        // 2. Выход
+        window.signOut = async () => {
+            await supabase.auth.signOut();
+            window.location.reload();
+        };
+
+        // 3. Смена статуса
         window.changeStatus = async (text, color) => {
+            if (!CURRENT_USER_ID) return;
+
             const { error } = await supabase
                 .from("profiles")
-                .update({ status: text, color: color }) // Убедись, что колонки 'status' и 'color' есть в БД
-                .eq('id', MY_ID);
+                .update({ status: text, color: color })
+                .eq('id', CURRENT_USER_ID);
 
             if (error) {
                 console.error(error);
-                alert("Ошибка! Проверьте RLS политики.");
+                alert("Ошибка обновления! Проверьте RLS в Supabase.");
             } else {
-                fetchGroup(); // Сразу обновляем список
+                fetchGroup();
             }
         };
 
-        // Загрузка списка группы
+        // 4. Загрузка данных
         async function fetchGroup() {
             const { data, error } = await supabase
                 .from("profiles")
                 .select("*")
-                .order('username', { ascending: true }); // Сортировка по алфавиту
+                .order('username', { ascending: true });
 
             if (error) {
-                console.error(error);
                 document.getElementById('groupList').innerHTML = `<p style='color:red; text-align:center;'>Ошибка загрузки</p>`;
                 return;
             }
 
             const list = document.getElementById('groupList');
-            // Отрисовка списка (также как на скрине)
             list.innerHTML = data.map(user => `
                 <div class="user-item">
                     <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-                    
                     <div class="user-info">
-                        <strong class="user-name">${user.username}</strong>
-                        <small class="user-status">${user.status || "Статус не задан"}</small>
+                        <strong class="user-name">${user.username || 'Без имени'}</strong>
+                        <small class="user-status">${user.status || "Нет статуса"}</small>
                     </div>
                 </div>
             `).join('');
-
-            // Приветствие (Мой профиль)
-            const me = data.find(s => s.id === MY_ID);
-            if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
         }
 
-        // Запускаем при загрузке
-        fetchGroup();
+        // 5. Инициализация пользователя
+        async function initApp() {
+            const { data: { user } } = await supabase.auth.getUser();
 
-        // Обновляем раз в 5 секунд (как на скрине)
-        setInterval(fetchGroup, 5000);
+            if (user) {
+                CURRENT_USER_ID = user.id;
+                document.getElementById('myInfo').innerText = `Вы зашли как: ${user.email}`;
+                document.getElementById('loginBtn').classList.add('hidden');
+                document.getElementById('logoutBtn').classList.remove('hidden');
+                document.getElementById('controls').classList.remove('hidden');
+            } else {
+                document.getElementById('myInfo').innerText = "Войдите, чтобы менять статус";
+                document.getElementById('loginBtn').classList.remove('hidden');
+                document.getElementById('logoutBtn').classList.add('hidden');
+                document.getElementById('controls').classList.add('hidden');
+            }
+
+            fetchGroup();
+            setInterval(fetchGroup, 5000);
+        }
+
+        initApp();
     </script>
 </body>
 </html>
