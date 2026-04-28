@@ -3,69 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой статус / Группа</title>
+    <title>Учебный Монитор</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .card-title { font-size: 1.3em; font-weight: 600; margin-bottom: 5px; margin-top: 0; }
-        .card-subtitle { font-size: 0.9em; color: #666; margin-bottom: 20px; display: block; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
         
-        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .status-btn { display: flex; align-items: center; justify-content: center; gap: 8px; border: none; padding: 12px; border-radius: 6px; color: white; cursor: pointer; transition: opacity 0.2s; text-decoration: none; font-weight: 500; font-size: 14px; }
-        .status-btn:hover { opacity: 0.85; }
-        .status-btn:disabled { background-color: #ccc !important; cursor: not-allowed; }
+        /* Таймер и Имя */
+        .user-header { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; }
+        .timer-display { color: #3182ce; font-size: 1.8em; font-weight: bold; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        
+        /* Кнопки как на скриншоте */
+        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-stop { background-color: #d9534f; }
+        .btn-break { background-color: #ffb800; color: #333; }
+        .btn-exit { background-color: #718096; }
+        
+        .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        #groupList { display: flex; flex-direction: column; gap: 15px; }
-        .user-item { display: flex; align-items: start; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
-        .user-item:last-child { border-bottom: none; padding-bottom: 0; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; margin-top: 6px; flex-shrink: 0; }
-        .user-info { flex-grow: 1; }
-        .user-name { font-weight: 600; font-size: 1.0em; margin-bottom: 2px; display: block;}
-        .user-status { font-size: 0.85em; color: #777; line-height: 1.4; display: block; }
-
-        .auth-section { margin-bottom: 15px; text-align: center; }
-        .btn-google { background-color: #4285F4; width: 100%; margin-bottom: 10px; }
-        .btn-logout { background: none; border: none; color: #e53e3e; cursor: pointer; font-size: 0.8em; text-decoration: underline; padding: 0; }
+        /* Список группы */
+        .group-monitor { text-align: left; }
+        .group-monitor h3 { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+        .user-meta { display: flex; align-items: center; gap: 10px; }
+        .online-dot { width: 10px; height: 10px; border-radius: 50%; background: #48bb78; }
+        .offline-dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e0; }
+        .study-time { font-size: 0.8em; color: #718096; text-align: right; }
+        
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div class="card">
-            <h2 class="card-title">Мой профиль</h2>
-            <span class="card-subtitle" id="myInfo">Проверка авторизации...</span>
-            
-            <div class="auth-section">
-                <button id="loginBtn" onclick="signInWithGoogle()" class="status-btn btn-google">
-                    <i class="fab fa-google"></i> Войти через Google
-                </button>
-                <button id="logoutBtn" onclick="signOut()" class="btn-logout hidden">Выйти из аккаунта</button>
-            </div>
+        <div class="card" id="authBlock">
+            <button onclick="signInWithGoogle()" class="btn-main" style="background: #4285F4;">Войти через Google</button>
+        </div>
 
-            <div id="controls" class="status-grid hidden">
-                <button onclick="changeStatus('📞 На созвоне', '#e53e3e')" class="status-btn" style="background-color: #e53e3e;">
-                    <i class="fas fa-phone"></i> Созвон
-                </button>
-                <button onclick="changeStatus('🍕 Перекус', '#ed8936')" class="status-btn" style="background-color: #ed8936;">
-                    <i class="fas fa-pizza-slice"></i> Ем
-                </button>
-                <button onclick="changeStatus('😴 Отдыхаю', '#805ad5')" class="status-btn" style="background-color: #805ad5;">
-                    <i class="fas fa-moon"></i> Сплю
-                </button>
-                <button onclick="changeStatus('💻 В работе', '#2c7a7b')" class="status-btn" style="background-color: #2c7a7b;">
-                    <i class="fas fa-code"></i> Работаю
-                </button>
+        <div class="card hidden" id="mainBlock">
+            <div class="user-header" id="userName">Загрузка...</div>
+            <div class="timer-display">
+                <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
+            </div>
+            
+            <button onclick="stopSession()" class="btn-main btn-stop">
+                <i class="fas fa-minus-circle"></i> Завершить сессию
+            </button>
+            
+            <div class="grid-actions">
+                <button class="btn-main btn-break"><i class="fas fa-coffee"></i> Перерыв</button>
+                <button onclick="signOut()" class="btn-main btn-exit">Выход</button>
             </div>
         </div>
 
-        <div class="card">
-            <h2 class="card-title">Монитор группы</h2>
-            <div id="groupList">
-                <p style="text-align: center; color: #888;">Загрузка списка группы...</p>
-            </div>
+        <div class="card group-monitor">
+            <h3><i class="fas fa-users"></i> Монитор группы</h3>
+            <div id="groupList"></div>
         </div>
     </div>
 
@@ -73,89 +67,98 @@
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
         const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07'; // Твой ключ
+        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07'; 
         const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let CURRENT_USER_ID = null;
+        let seconds = 0;
+        let timerInterval;
+        let currentUser = null;
 
-        // 1. Вход через Google
-        window.signInWithGoogle = async () => {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.href }
-            });
-            if (error) alert("Ошибка: " + error.message);
-        };
+        // --- ЛОГИКА ТАЙМЕРА ---
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').innerText = formatTime(seconds);
+                // Обновляем "активность" в БД раз в 30 секунд
+                if (seconds % 30 === 0) updateActivity();
+            }, 1000);
+        }
 
-        // 2. Выход
-        window.signOut = async () => {
-            await supabase.auth.signOut();
-            window.location.reload();
-        };
+        function formatTime(s) {
+            if (s < 60) return `${s} сек.`;
+            let m = Math.floor(s / 60);
+            return `${m}м ${s % 60}с`;
+        }
 
-        // 3. Смена статуса
-        window.changeStatus = async (text, color) => {
-            if (!CURRENT_USER_ID) return;
+        // --- РАБОТА С БАЗОЙ ---
+        async function updateActivity() {
+            if (!currentUser) return;
+            // Сохраняем время и текущий момент как "был в сети"
+            await supabase.from("profiles").update({ 
+                last_seen: new Date().toISOString(),
+                study_seconds: seconds 
+            }).eq('id', currentUser.id);
+        }
 
-            const { error } = await supabase
-                .from("profiles")
-                .update({ status: text, color: color })
-                .eq('id', CURRENT_USER_ID);
-
-            if (error) {
-                console.error(error);
-                alert("Ошибка обновления! Проверьте RLS в Supabase.");
-            } else {
-                fetchGroup();
-            }
-        };
-
-        // 4. Загрузка данных
         async function fetchGroup() {
-            const { data, error } = await supabase
-                .from("profiles")
-                .select("*")
-                .order('username', { ascending: true });
-
-            if (error) {
-                document.getElementById('groupList').innerHTML = `<p style='color:red; text-align:center;'>Ошибка загрузки</p>`;
-                return;
-            }
+            const { data, error } = await supabase.from("profiles").select("*");
+            if (error) return;
 
             const list = document.getElementById('groupList');
-            list.innerHTML = data.map(user => `
-                <div class="user-item">
-                    <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-                    <div class="user-info">
-                        <strong class="user-name">${user.username || 'Без имени'}</strong>
-                        <small class="user-status">${user.status || "Нет статуса"}</small>
+            const now = new Date();
+
+            list.innerHTML = data.map(user => {
+                // Считаем онлайн, если был активен последние 2 минуты
+                const lastSeen = new Date(user.last_seen);
+                const isOnline = (now - lastSeen) < 120000; 
+                
+                return `
+                    <div class="user-row">
+                        <div class="user-meta">
+                            <div class="${isOnline ? 'online-dot' : 'offline-dot'}"></div>
+                            <strong>${user.username || 'Студент'}</strong>
+                        </div>
+                        <div class="study-time">
+                            <i class="fas fa-home" style="color: #ed8936"></i> Дома<br>
+                            <i class="fas fa-clock"></i> ${formatTime(user.study_seconds || 0)}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        // 5. Инициализация пользователя
-        async function initApp() {
+        // --- АВТОРИЗАЦИЯ ---
+        window.signInWithGoogle = async () => {
+            await supabase.auth.signInWithOAuth({ provider: 'google' });
+        };
+
+        window.signOut = async () => {
+            await updateActivity();
+            await supabase.auth.signOut();
+            location.reload();
+        };
+
+        async function init() {
             const { data: { user } } = await supabase.auth.getUser();
-
             if (user) {
-                CURRENT_USER_ID = user.id;
-                document.getElementById('myInfo').innerText = `Вы зашли как: ${user.email}`;
-                document.getElementById('loginBtn').classList.add('hidden');
-                document.getElementById('logoutBtn').classList.remove('hidden');
-                document.getElementById('controls').classList.remove('hidden');
-            } else {
-                document.getElementById('myInfo').innerText = "Войдите, чтобы менять статус";
-                document.getElementById('loginBtn').classList.remove('hidden');
-                document.getElementById('logoutBtn').classList.add('hidden');
-                document.getElementById('controls').classList.add('hidden');
-            }
+                currentUser = user;
+                document.getElementById('authBlock').classList.add('hidden');
+                document.getElementById('mainBlock').classList.remove('hidden');
+                document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
+                
+                // Загружаем прогресс пользователя из базы
+                const { data: profile } = await supabase.from("profiles").select("study_seconds").eq('id', user.id).single();
+                if (profile) seconds = profile.study_seconds || 0;
 
+                startTimer();
+            }
+            
             fetchGroup();
-            setInterval(fetchGroup, 5000);
+            setInterval(fetchGroup, 10000); // Обновляем список каждые 10 сек
         }
 
-        initApp();
+        init();
     </script>
 </body>
 </html>
