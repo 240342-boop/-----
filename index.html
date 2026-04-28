@@ -8,157 +8,164 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: center; }
         
-        /* Таймер и Имя */
-        .user-header { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; }
-        .timer-display { color: #3182ce; font-size: 1.8em; font-weight: bold; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .user-header { font-size: 1.3em; font-weight: bold; margin-bottom: 10px; color: #2d3748; }
+        .timer-display { color: #3182ce; font-size: 2em; font-weight: bold; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
         
-        /* Кнопки как на скриншоте */
-        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; margin-bottom: 10px; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-stop { background-color: #d9534f; }
-        .btn-break { background-color: #ffb800; color: #333; }
+        .btn-main { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+        .btn-main:active { transform: scale(0.98); }
+        
+        .btn-google { background: #4285F4; margin-bottom: 10px; }
+        .btn-stop { background-color: #d9534f; margin-bottom: 10px; }
         .btn-exit { background-color: #718096; }
         
-        .grid-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-        /* Список группы */
         .group-monitor { text-align: left; }
-        .group-monitor h3 { display: flex; align-items: center; gap: 10px; justify-content: center; margin-bottom: 20px; }
-        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
-        .user-meta { display: flex; align-items: center; gap: 10px; }
-        .online-dot { width: 10px; height: 10px; border-radius: 50%; background: #48bb78; }
-        .offline-dot { width: 10px; height: 10px; border-radius: 50%; background: #cbd5e0; }
-        .study-time { font-size: 0.8em; color: #718096; text-align: right; }
+        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .online { background: #48bb78; box-shadow: 0 0 5px #48bb78; }
+        .offline { background: #cbd5e0; }
         
         .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="card" id="authBlock">
-            <button onclick="signInWithGoogle()" class="btn-main" style="background: #4285F4;">Войти через Google</button>
-        </div>
-
-        <div class="card hidden" id="mainBlock">
-            <div class="user-header" id="userName">Загрузка...</div>
-            <div class="timer-display">
-                <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
-            </div>
-            
-            <button onclick="stopSession()" class="btn-main btn-stop">
-                <i class="fas fa-minus-circle"></i> Завершить сессию
-            </button>
-            
-            <div class="grid-actions">
-                <button class="btn-main btn-break"><i class="fas fa-coffee"></i> Перерыв</button>
-                <button onclick="signOut()" class="btn-main btn-exit">Выход</button>
-            </div>
-        </div>
-
-        <div class="card group-monitor">
-            <h3><i class="fas fa-users"></i> Монитор группы</h3>
-            <div id="groupList"></div>
-        </div>
+<div class="container">
+    <div id="authBlock" class="card">
+        <h2>Вход в систему</h2>
+        <p>Для начала отсчета времени водите через Google</p>
+        <button onclick="signInWithGoogle()" class="btn-main btn-google">
+            <i class="fab fa-google"></i> Войти через Google
+        </button>
     </div>
 
-    <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+    <div id="mainBlock" class="card hidden">
+        <div class="user-header" id="userName">Загрузка...</div>
+        <div class="timer-display">
+            <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
+        </div>
+        
+        <button onclick="stopSession()" class="btn-main btn-stop">
+            <i class="fas fa-pause-circle"></i> Завершить сессию
+        </button>
+        
+        <button onclick="signOut()" class="btn-main btn-exit">
+            <i class="fas fa-sign-out-alt"></i> Выход
+        </button>
+    </div>
 
-        const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07'; 
-        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    <div class="card group-monitor">
+        <h3 style="margin-top:0;"><i class="fas fa-users"></i> Монитор группы</h3>
+        <div id="groupList">Загрузка данных...</div>
+    </div>
+</div>
 
-        let seconds = 0;
-        let timerInterval;
-        let currentUser = null;
+<script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // --- ЛОГИКА ТАЙМЕРА ---
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                seconds++;
-                document.getElementById('timer').innerText = formatTime(seconds);
-                // Обновляем "активность" в БД раз в 30 секунд
-                if (seconds % 30 === 0) updateActivity();
-            }, 1000);
-        }
+    // --- НАСТРОЙКИ ---
+    const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
+    
+    // ПРЯМАЯ ССЫЛКА НА ТВОЙ РЕПОЗИТОРИЙ
+    const SITE_URL = 'https://240342-boop.github.io/-----/'; 
 
-        function formatTime(s) {
-            if (s < 60) return `${s} сек.`;
-            let m = Math.floor(s / 60);
-            return `${m}м ${s % 60}с`;
-        }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- РАБОТА С БАЗОЙ ---
-        async function updateActivity() {
-            if (!currentUser) return;
-            // Сохраняем время и текущий момент как "был в сети"
-            await supabase.from("profiles").update({ 
-                last_seen: new Date().toISOString(),
-                study_seconds: seconds 
-            }).eq('id', currentUser.id);
-        }
+    let seconds = 0;
+    let timerInterval;
+    let currentUser = null;
 
-        async function fetchGroup() {
-            const { data, error } = await supabase.from("profiles").select("*");
-            if (error) return;
+    // Авторизация
+    window.signInWithGoogle = async () => {
+        await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: SITE_URL }
+        });
+    };
 
-            const list = document.getElementById('groupList');
-            const now = new Date();
+    window.signOut = async () => {
+        await saveProgress();
+        await supabase.auth.signOut();
+        window.location.href = SITE_URL;
+    };
 
-            list.innerHTML = data.map(user => {
-                // Считаем онлайн, если был активен последние 2 минуты
-                const lastSeen = new Date(user.last_seen);
-                const isOnline = (now - lastSeen) < 120000; 
-                
-                return `
-                    <div class="user-row">
-                        <div class="user-meta">
-                            <div class="${isOnline ? 'online-dot' : 'offline-dot'}"></div>
-                            <strong>${user.username || 'Студент'}</strong>
-                        </div>
-                        <div class="study-time">
-                            <i class="fas fa-home" style="color: #ed8936"></i> Дома<br>
-                            <i class="fas fa-clock"></i> ${formatTime(user.study_seconds || 0)}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
+    // Сохранение времени в базу
+    async function saveProgress() {
+        if (!currentUser) return;
+        await supabase.from("profiles").update({ 
+            study_seconds: seconds,
+            last_seen: new Date().toISOString() 
+        }).eq('id', currentUser.id);
+    }
 
-        // --- АВТОРИЗАЦИЯ ---
-        window.signInWithGoogle = async () => {
-            await supabase.auth.signInWithOAuth({ provider: 'google' });
-        };
+    // Логика таймера
+    function startTimer() {
+        if (timerInterval) clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            seconds++;
+            document.getElementById('timer').innerText = formatTime(seconds);
+            // Раз в 30 секунд сохраняем в БД, чтобы не потерять прогресс
+            if (seconds % 30 === 0) saveProgress();
+        }, 1000);
+    }
 
-        window.signOut = async () => {
-            await updateActivity();
-            await supabase.auth.signOut();
-            location.reload();
-        };
+    function formatTime(s) {
+        if (s < 60) return s + " сек.";
+        let m = Math.floor(s / 60);
+        return m + "м " + (s % 60) + "с";
+    }
 
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                currentUser = user;
-                document.getElementById('authBlock').classList.add('hidden');
-                document.getElementById('mainBlock').classList.remove('hidden');
-                document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
-                
-                // Загружаем прогресс пользователя из базы
-                const { data: profile } = await supabase.from("profiles").select("study_seconds").eq('id', user.id).single();
-                if (profile) seconds = profile.study_seconds || 0;
+    // Отображение группы
+    async function fetchGroup() {
+        const { data, error } = await supabase.from("profiles").select("*").order('study_seconds', { ascending: false });
+        if (error) return;
 
-                startTimer();
-            }
+        const list = document.getElementById('groupList');
+        const now = new Date();
+
+        list.innerHTML = data.map(user => {
+            const lastSeen = new Date(user.last_seen);
+            const isOnline = (now - lastSeen) < 60000; // Онлайн если была активность в последнюю минуту
             
-            fetchGroup();
-            setInterval(fetchGroup, 10000); // Обновляем список каждые 10 сек
+            return `
+                <div class="user-row">
+                    <div>
+                        <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                        <strong>${user.username || user.email || 'Аноним'}</strong>
+                    </div>
+                    <div style="text-align: right; font-size: 0.9em; color: #4a5568;">
+                        <i class="fas fa-book-reader"></i> ${formatTime(user.study_seconds || 0)}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // Проверка входа при загрузке
+    async function init() {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (user) {
+            currentUser = user;
+            document.getElementById('authBlock').classList.add('hidden');
+            document.getElementById('mainBlock').classList.remove('hidden');
+            document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
+
+            // Загружаем прогресс из БД
+            const { data: profile } = await supabase.from("profiles").select("study_seconds").eq('id', user.id).single();
+            if (profile) seconds = profile.study_seconds || 0;
+
+            startTimer();
         }
 
-        init();
-    </script>
+        fetchGroup();
+        setInterval(fetchGroup, 10000); // Обновляем список каждые 10 сек
+    }
+
+    init();
+</script>
+
 </body>
 </html>
