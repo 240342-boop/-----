@@ -6,36 +6,39 @@
     <title>Study Monitor Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 450px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .text-center { text-align: center; }
-        
-        /* Таймер */
+
+        /* Верхняя панель */
+        .user-header { font-size: 1.4em; font-weight: bold; margin-bottom: 10px; color: #2d3748; }
         .timer-display { color: #3182ce; font-size: 2.2em; font-weight: bold; margin: 15px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        
+
         /* Кнопки */
-        .btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 16px; transition: 0.2s; margin-bottom: 8px; }
+        .btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; margin-bottom: 8px; }
         .btn-main:active { transform: scale(0.98); }
         .btn-google { background: #4285F4; }
         .btn-stop { background: #e53e3e; }
         .btn-break { background: #ffb800; color: #333; }
         .btn-exit { background: #718096; }
-        .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-        /* Монитор группы */
-        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f2f5; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        /* Группа и Индикатор */
+        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f0f2f5; }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; transition: 0.3s; }
         .online { background: #48bb78; box-shadow: 0 0 8px #48bb78; }
         .offline { background: #cbd5e0; }
+        .study-meta { text-align: right; font-size: 0.85em; color: #718096; }
 
         /* Чат */
-        #chatBox { height: 250px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; padding: 12px; margin-bottom: 10px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
-        .msg { font-size: 0.9em; line-height: 1.4; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        #chatBox { height: 220px; overflow-y: auto; border: 1px solid #edf2f7; border-radius: 12px; padding: 12px; margin-bottom: 12px; background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
+        .msg { background: white; padding: 8px 12px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); font-size: 0.9em; line-height: 1.4; }
         .chat-input-group { display: flex; gap: 8px; }
         #chatInput { flex-grow: 1; padding: 12px; border: 1px solid #cbd5e0; border-radius: 10px; outline: none; }
-        .btn-send { background: #48bb78; color: white; border: none; width: 45px; border-radius: 10px; cursor: pointer; }
-        
+        .btn-send { background: #48bb78; color: white; border: none; width: 48px; border-radius: 10px; cursor: pointer; }
+
         .hidden { display: none; }
     </style>
 </head>
@@ -44,23 +47,30 @@
 <div class="container">
     <div id="authBlock" class="card text-center">
         <h2>Study Monitor</h2>
-        <button onclick="signInWithGoogle()" class="btn-main btn-google"><i class="fab fa-google"></i> Войти через Google</button>
+        <p>Войдите для начала учебы</p>
+        <button onclick="signInWithGoogle()" class="btn-main btn-google">
+            <i class="fab fa-google"></i> Войти через Google
+        </button>
     </div>
 
     <div id="mainBlock" class="card text-center hidden">
-        <div id="userName" style="font-weight: bold; font-size: 1.1em;">...</div>
+        <div class="user-header" id="userName">...</div>
         <div class="timer-display">
             <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
         </div>
-        <button onclick="saveAndReset()" class="btn-main btn-stop"><i class="fas fa-minus-circle"></i> Завершить сессию</button>
-        <div class="grid-buttons">
-            <button onclick="togglePause()" id="pauseBtn" class="btn-main btn-break"><i class="fas fa-coffee"></i> Перерыв</button>
+        <button onclick="resetSession()" class="btn-main btn-stop">
+            <i class="fas fa-minus-circle"></i> Завершить сессию
+        </button>
+        <div class="grid-btns">
+            <button onclick="togglePause()" id="pauseBtn" class="btn-main btn-break">
+                <i class="fas fa-coffee"></i> Перерыв
+            </button>
             <button onclick="signOut()" class="btn-main btn-exit">Выход</button>
         </div>
     </div>
 
     <div class="card">
-        <h3 style="margin-top:0"><i class="fas fa-users"></i> Группа</h3>
+        <h3 style="margin-top:0"><i class="fas fa-users"></i> Монитор группы</h3>
         <div id="groupList">Загрузка...</div>
     </div>
 
@@ -68,7 +78,7 @@
         <h3 style="margin-top:0"><i class="fas fa-comments"></i> Общий чат</h3>
         <div id="chatBox">Загрузка сообщений...</div>
         <div class="chat-input-group">
-            <input type="text" id="chatInput" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <input type="text" id="chatInput" placeholder="Написать..." onkeypress="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()" class="btn-send"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -88,14 +98,54 @@
 
     // --- АВТОРИЗАЦИЯ ---
     window.signInWithGoogle = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL } });
-    window.signOut = () => supabase.auth.signOut().then(() => location.href = SITE_URL);
+    window.signOut = async () => {
+        await saveProgress();
+        await supabase.auth.signOut();
+        location.href = SITE_URL;
+    };
+
+    // --- ТАЙМЕР И СОХРАНЕНИЕ ---
+    async function saveProgress() {
+        if (!currentUser) return;
+        await supabase.from("profiles").update({ 
+            study_seconds: seconds, 
+            last_seen: new Date().toISOString() 
+        }).eq('id', currentUser.id);
+    }
+
+    window.resetSession = async () => {
+        if(confirm("Завершить текущую сессию? Время сохранится.")) {
+            await saveProgress();
+            seconds = 0;
+            document.getElementById('timer').innerText = "0 сек.";
+        }
+    };
+
+    window.togglePause = () => {
+        isPaused = !isPaused;
+        const btn = document.getElementById('pauseBtn');
+        btn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Продолжить' : '<i class="fas fa-coffee"></i> Перерыв';
+        btn.style.background = isPaused ? '#48bb78' : '#ffb800';
+    };
+
+    function formatTime(s) {
+        if (!s || s === 0) return "0с";
+        const m = Math.floor(s / 60);
+        const sec = s % 60;
+        return m > 0 ? `${m}м ${sec}с` : `${sec}с`;
+    }
 
     // --- ЧАТ ---
     window.sendMessage = async () => {
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
         if (!text || !currentUser) return;
-        await supabase.from('messages').insert([{ text, user_name: currentUser.user_metadata.full_name || currentUser.email, user_id: currentUser.id }]);
+
+        await supabase.from('messages').insert([{ 
+            text: text, 
+            user_name: currentUser.user_metadata.full_name || currentUser.email,
+            user_id: currentUser.id 
+        }]);
         input.value = '';
     };
 
@@ -103,48 +153,43 @@
         const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(30);
         if (data) {
             const box = document.getElementById('chatBox');
-            box.innerHTML = data.reverse().map(m => `<div class="msg"><b>${m.user_name}:</b> ${m.text}</div>`).join('');
+            box.innerHTML = data.reverse().map(m => `
+                <div class="msg"><b>${m.user_name || 'Аноним'}:</b> ${m.text}</div>
+            `).join('');
             box.scrollTop = box.scrollHeight;
         }
     }
 
-    // Realtime для чата
+    // Слушаем чат в реальном времени
     supabase.channel('messages_realtime').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => loadMessages()).subscribe();
 
-    // --- ТАЙМЕР И ГРУППА ---
-    window.togglePause = () => {
-        isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerHTML = isPaused ? '<i class="fas fa-play"></i> Продолжить' : '<i class="fas fa-coffee"></i> Перерыв';
-        document.getElementById('pauseBtn').style.background = isPaused ? '#48bb78' : '#ffb800';
-    };
-
-    window.saveAndReset = async () => {
-        seconds = 0;
-        document.getElementById('timer').innerText = "0 сек.";
-        await saveProgress();
-    };
-
-    async function saveProgress() {
-        if (!currentUser) return;
-        await supabase.from("profiles").update({ study_seconds: seconds, last_seen: new Date().toISOString() }).eq('id', currentUser.id);
-    }
-
-    function formatTime(s) {
-        if (s < 60) return s + " сек.";
-        return Math.floor(s/60) + "м " + (s%60) + "с";
-    }
-
+    // --- ГРУППА И ИНДИКАТОР ---
     async function fetchGroup() {
         const { data } = await supabase.from("profiles").select("*").order('study_seconds', { ascending: false });
         const now = new Date();
+        
         document.getElementById('groupList').innerHTML = (data || []).map(u => {
-            const isOnline = (now - new Date(u.last_seen)) < 60000;
-            return `<div class="user-row"><span><span class="status-dot ${isOnline?'online':'offline'}"></span>${u.username || u.email}</span> <b>${formatTime(u.study_seconds||0)}</b></div>`;
+            const lastSeen = u.last_seen ? new Date(u.last_seen) : new Date(0);
+            const isOnline = (now - lastSeen) < 120000; // Онлайн если активность < 2 мин
+
+            return `
+                <div class="user-row">
+                    <div class="user-info">
+                        <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
+                        <strong>${u.username || u.email || 'Студент'}</strong>
+                    </div>
+                    <div class="study-meta">
+                        <span style="color:#48bb78; display:block;">🏠 Дома</span>
+                        <i class="fas fa-clock"></i> ${formatTime(u.study_seconds)}
+                    </div>
+                </div>`;
         }).join('');
     }
 
+    // --- ЗАПУСК ---
     async function init() {
         const { data: { user } } = await supabase.auth.getUser();
+
         if (user) {
             currentUser = user;
             document.getElementById('authBlock').classList.add('hidden');
@@ -158,10 +203,11 @@
                 if (!isPaused) {
                     seconds++;
                     document.getElementById('timer').innerText = formatTime(seconds);
-                    if (seconds % 20 === 0) saveProgress();
+                    if (seconds % 20 === 0) saveProgress(); // Обновляем онлайн каждые 20 сек
                 }
             }, 1000);
         }
+
         loadMessages();
         fetchGroup();
         setInterval(fetchGroup, 10000);
