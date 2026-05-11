@@ -3,85 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro</title>
+    <title>Study Monitor Pro - Dark Elite</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; margin: 0; padding: 20px; color: #f8fafc; }
-        .container { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
-        .card { background: #1e293b; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155; }
-        
-        /* Таймер */
-        .user-header { font-size: 1.2em; font-weight: bold; color: #38bdf8; text-align: center; }
-        .timer-display { color: #f8fafc; font-size: 3em; font-weight: bold; margin: 10px 0; text-align: center; }
-        
-        /* Панель личных достижений */
-        .my-achievements { display: flex; justify-content: center; gap: 10px; margin-top: 10px; min-height: 40px; padding: 10px; background: #0f172a; border-radius: 12px; }
-        .badge-item { font-size: 1.5em; cursor: help; filter: grayscale(1); transition: 0.3s; }
-        .badge-item.active { filter: grayscale(0); transform: scale(1.2); }
+        :root {
+            --bg-deep: #0b0e14;
+            --bg-card: #161b22;
+            --accent: #38bdf8;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+        }
 
-        /* Кнопки */
-        .btn-main { width: 100%; padding: 14px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; color: white; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; transition: 0.2s; }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-google { background: #4f46e5; }
-        .btn-stop { background: #ef4444; }
-        .btn-break { background: #f59e0b; color: #1e293b; }
-        .btn-exit { background: #64748b; }
-        .grid-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-deep); color: var(--text-main); margin: 0; padding: 20px; }
+        .container { max-width: 450px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
+        
+        /* Основная карточка сессии */
+        .card { background: var(--bg-card); border-radius: 24px; padding: 20px; border: 1px solid #30363d; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        
+        .timer-header { text-align: center; font-size: 1.1em; color: var(--text-dim); margin-bottom: 5px; }
+        .timer-val { font-size: 3.5rem; font-weight: 800; text-align: center; color: var(--success); margin: 10px 0; text-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+
+        /* Сетка управления */
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .btn { border: none; padding: 14px; border-radius: 14px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; font-size: 0.95rem; }
+        .btn:active { transform: scale(0.96); }
+        
+        .btn-start { background: rgba(34, 197, 94, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .btn-stop { background: var(--danger); color: white; grid-column: span 1; }
+        .btn-exit { background: #30363d; color: var(--text-main); }
+        .btn-full { grid-column: span 2; }
+
+        /* Профиль мини */
+        .profile-mini { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; }
+        .avatar { width: 50px; height: 50px; background: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; }
+
+        /* Вкладки как на скриншоте */
+        .tabs-nav { display: flex; background: #0b0e14; padding: 5px; border-radius: 14px; margin-top: 15px; }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: none; color: var(--text-dim); cursor: pointer; border-radius: 10px; font-weight: 600; font-size: 0.85rem; }
+        .tab-btn.active { background: #30363d; color: white; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+
+        /* Достижения (Сетка 2х2) */
+        .achievements-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .ach-item { background: #0b0e14; padding: 15px; border-radius: 18px; border: 1px solid #30363d; opacity: 0.4; filter: grayscale(1); transition: 0.4s; position: relative; }
+        .ach-item.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--accent); background: rgba(56, 189, 248, 0.05); }
+        .ach-icon { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+        .ach-title { font-weight: 700; font-size: 0.9rem; display: block; }
+        .ach-desc { font-size: 0.7rem; color: var(--text-dim); display: block; margin-top: 4px; }
+        
+        .lock-icon { position: absolute; top: 10px; right: 10px; font-size: 0.7rem; color: var(--text-dim); }
+        .ach-item.unlocked .lock-icon { display: none; }
 
         /* Рейтинг */
-        .user-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #334155; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-        .online { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
-        .offline { background: #64748b; }
-        .rank-num { width: 25px; font-weight: bold; }
-
-        /* Чат */
-        #chatBox { height: 180px; overflow-y: auto; border-radius: 12px; padding: 10px; background: #0f172a; margin-bottom: 10px; font-size: 0.9em; }
-        .msg { margin-bottom: 5px; border-left: 2px solid #38bdf8; padding-left: 8px; }
-        .chat-input-group { display: flex; gap: 5px; }
-        #chatInput { flex: 1; padding: 10px; border-radius: 8px; border: none; background: #334155; color: white; }
-        .btn-send { background: #22c55e; border: none; border-radius: 8px; width: 40px; color: white; cursor: pointer; }
+        .rank-item { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid #30363d; }
+        .rank-info { display: flex; align-items: center; gap: 10px; }
+        .rank-pos { font-weight: 800; color: var(--text-dim); width: 20px; }
 
         .hidden { display: none; }
-        h3 { font-size: 0.9em; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div id="authBlock" class="card text-center">
-        <h2>Study Monitor</h2>
-        <button onclick="signInWithGoogle()" class="btn-main btn-google">Войти через Google</button>
-    </div>
-
-    <div id="mainBlock" class="card hidden">
-        <div id="userName" class="user-header">Загрузка...</div>
-        <div class="timer-display" id="timer">0с</div>
-        
-        <h3>Мои достижения:</h3>
-        <div class="my-achievements" id="myBadges">
-            </div>
-
-        <button onclick="endSession()" class="btn-main btn-stop">
-            <i class="fas fa-check-circle"></i> Завершить и сохранить
+        <h1 style="margin-top:0">Study Monitor</h1>
+        <p style="color: var(--text-dim)">Присоединяйся к учебной сессии</p>
+        <button onclick="signIn()" class="btn btn-start btn-full" style="background: var(--accent); color: #000;">
+            <i class="fab fa-google"></i> Войти через Google
         </button>
-        <div class="grid-btns">
-            <button onclick="togglePause()" id="pauseBtn" class="btn-main btn-break">Перерыв</button>
-            <button onclick="signOut()" class="btn-main btn-exit">Выход</button>
+    </div>
+
+    <div id="mainBlock" class="hidden">
+        <div class="card">
+            <div class="timer-header" id="userNameDisplay">Учебная сессия</div>
+            <div class="timer-val" id="timer">00:00:00</div>
+            
+            <div class="controls-grid">
+                <button onclick="togglePause()" id="pauseBtn" class="btn btn-start">
+                    <i class="fas fa-play"></i> Продолжить
+                </button>
+                <button onclick="finishSession()" class="btn btn-stop">
+                    <i class="fas fa-square"></i> Завершить
+                </button>
+                <button onclick="signOut()" class="btn btn-exit btn-full">Выход</button>
+            </div>
         </div>
-    </div>
 
-    <div class="card">
-        <h3>🏆 Рейтинг группы</h3>
-        <div id="groupList">Загрузка...</div>
-    </div>
+        <div class="tabs-nav">
+            <button class="tab-btn active" onclick="switchTab('rating')"><i class="fas fa-trophy"></i> Рейтинг</button>
+            <button class="tab-btn" onclick="switchTab('achievements')"><i class="fas fa-award"></i> Достижения</button>
+        </div>
 
-    <div class="card">
-        <h3>💬 Чат</h3>
-        <div id="chatBox"></div>
-        <div class="chat-input-group">
-            <input type="text" id="chatInput" placeholder="Текст...">
-            <button onclick="sendMessage()" class="btn-send">></button>
+        <div id="tab-rating" class="card" style="margin-top:15px">
+            <div id="ratingList">Загрузка рейтинга...</div>
+        </div>
+
+        <div id="tab-achievements" class="card hidden" style="margin-top:15px">
+            <div style="display:flex; justify-content:space-between; align-items:center">
+                <h3>Все достижения</h3>
+                <span id="achCounter" style="color:var(--accent); font-weight:bold">0/5</span>
+            </div>
+            <div class="achievements-grid" id="achievementsGrid">
+                </div>
         </div>
     </div>
 </div>
@@ -91,71 +116,108 @@
 
     const SUPABASE_URL = 'https://tcnmxalzmfveerioxlha.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07';
-    const SITE_URL = 'https://240342-boop.github.io/-----/'; 
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-    let currentUser = null;
-    let seconds = 0;
-    let sessionSeconds = 0; 
-    let isPaused = false;
 
-    const ACHIEVEMENTS = {
-        'early_bird': { icon: '🌅', name: 'Пташка', desc: 'Учеба до 8:00' },
-        'night_owl':  { icon: '🦉', name: 'Сова', desc: 'Учеба после 23:00' },
-        'marathon':   { icon: '🏃', name: 'Марафонец', desc: 'Сессия > 2 часов' },
-        'activist':   { icon: '💬', name: 'Активист', desc: '20+ сообщений' },
-        'workaholic': { icon: '🔥', name: 'Трудоголик', desc: '10+ часов всего' }
+    let user = null;
+    let totalSeconds = 0;
+    let sessionSeconds = 0;
+    let isPaused = true;
+
+    const ACH_DATA = {
+        'first_step': { icon: '🌱', title: 'Первый шаг', desc: 'Провел первую сессию' },
+        'return':     { icon: '🔄', title: 'Возвращение', desc: 'Учеба после перерыва' },
+        'marathon':   { icon: '⚡', title: 'Легенда', desc: 'Сессия более 2 часов' },
+        'activist':   { icon: '📢', title: 'Активист', desc: 'Написал 20 сообщений' },
+        'workaholic': { icon: '💼', title: 'Трудоголик', desc: '5 часов суммарно' }
     };
 
-    window.signInWithGoogle = () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: SITE_URL } });
-    window.signOut = async () => { await saveProgress(); await supabase.auth.signOut(); location.reload(); };
+    // --- СИСТЕМА ВКЛАДОК ---
+    window.switchTab = (tabName) => {
+        document.getElementById('tab-rating').classList.toggle('hidden', tabName !== 'rating');
+        document.getElementById('tab-achievements').classList.toggle('hidden', tabName !== 'achievements');
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.toggle('active', b.innerText.toLowerCase().includes(tabName === 'rating' ? 'рейт' : 'достиж'));
+        });
+    };
 
-    // Сохранение в базу
-    async function saveProgress() {
-        if (!currentUser) return;
+    // --- ЛОГИКА ТАЙМЕРА ---
+    window.togglePause = () => {
+        isPaused = !isPaused;
+        const btn = document.getElementById('pauseBtn');
+        btn.innerHTML = isPaused ? '<i class="fas fa-play"></i> Продолжить' : '<i class="fas fa-pause"></i> Пауза';
+        btn.style.borderColor = isPaused ? 'var(--success)' : 'var(--warning)';
+        btn.style.color = isPaused ? 'var(--success)' : 'var(--warning)';
+    };
+
+    // ГЛАВНАЯ ФУНКЦИЯ: ЗАВЕРШИТЬ (Исправленная)
+    window.finishSession = async () => {
+        if (sessionSeconds < 1) return alert("Сессия слишком короткая!");
         
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
-        let achs = profile.achievements || [];
-        const h = new Date().getHours();
+        const btn = document.querySelector('.btn-stop');
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
 
-        // Проверка условий
-        if (h >= 4 && h < 8 && !achs.includes('early_bird')) achs.push('early_bird');
-        if ((h >= 23 || h < 4) && !achs.includes('night_owl')) achs.push('night_owl');
-        if (sessionSeconds >= 7200 && !achs.includes('marathon')) achs.push('marathon');
-        if (seconds >= 36000 && !achs.includes('workaholic')) achs.push('workaholic');
-
-        await supabase.from("profiles").update({ 
-            study_seconds: seconds, 
-            last_seen: new Date().toISOString(),
-            achievements: achs
-        }).eq('id', currentUser.id);
-
-        renderMyBadges(achs);
-        fetchGroup(); // Обновляем рейтинг сразу после сохранения
-    }
-
-    // Кнопка ЗАВЕРШИТЬ
-    window.endSession = async () => {
-        if (confirm("Сохранить результат и обнулить текущий таймер?")) {
-            await saveProgress();
+        try {
+            await saveToDatabase();
+            alert(`Успешно! Вы проучились ${formatTime(sessionSeconds)}`);
             sessionSeconds = 0;
-            alert("Прогресс успешно записан в рейтинг!");
+            isPaused = true;
+            document.getElementById('pauseBtn').innerHTML = '<i class="fas fa-play"></i> Продолжить';
+            await fetchRating();
+        } catch (e) {
+            alert("Ошибка сохранения");
+        } finally {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
         }
     };
 
-    window.togglePause = () => {
-        isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerText = isPaused ? 'Продолжить' : 'Перерыв';
-        document.getElementById('pauseBtn').style.background = isPaused ? '#22c55e' : '#f59e0b';
-    };
+    async function saveToDatabase() {
+        if (!user) return;
+        
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        let achs = profile.achievements || [];
 
-    function renderMyBadges(userAchs) {
-        const container = document.getElementById('myBadges');
-        container.innerHTML = Object.keys(ACHIEVEMENTS).map(key => `
-            <span class="badge-item ${userAchs.includes(key) ? 'active' : ''}" 
-                  title="${ACHIEVEMENTS[key].name}: ${ACHIEVEMENTS[key].desc}">
-                ${ACHIEVEMENTS[key].icon}
-            </span>
+        // Логика достижений
+        if (!achs.includes('first_step')) achs.push('first_step');
+        if (sessionSeconds > 7200 && !achs.includes('marathon')) achs.push('marathon');
+        if (totalSeconds > 18000 && !achs.includes('workaholic')) achs.push('workaholic');
+
+        await supabase.from('profiles').update({
+            study_seconds: totalSeconds,
+            last_seen: new Date().toISOString(),
+            achievements: achs
+        }).eq('id', user.id);
+
+        renderAchievements(achs);
+    }
+
+    // --- РЕНДЕРИНГ ---
+    function renderAchievements(unlocked) {
+        const grid = document.getElementById('achievementsGrid');
+        grid.innerHTML = Object.entries(ACH_DATA).map(([id, data]) => `
+            <div class="ach-item ${unlocked.includes(id) ? 'unlocked' : ''}">
+                <i class="fas fa-lock lock-icon"></i>
+                <span class="ach-icon">${data.icon}</span>
+                <span class="ach-title">${data.title}</span>
+                <span class="ach-desc">${data.desc}</span>
+            </div>
+        `).join('');
+        document.getElementById('achCounter').innerText = `${unlocked.length}/5`;
+    }
+
+    async function fetchRating() {
+        const { data } = await supabase.from('profiles').select('*').order('study_seconds', { ascending: false }).limit(10);
+        document.getElementById('ratingList').innerHTML = data.map((u, i) => `
+            <div class="rank-item">
+                <div class="rank-info">
+                    <span class="rank-pos">${i+1}</span>
+                    <div class="avatar" style="width:35px; height:35px; font-size:1rem">${(u.username || u.email)[0].toUpperCase()}</div>
+                    <b>${u.username || u.email.split('@')[0]}</b>
+                </div>
+                <span style="color:var(--success); font-weight:bold">${formatTime(u.study_seconds)}</span>
+            </div>
         `).join('');
     }
 
@@ -163,88 +225,39 @@
         const h = Math.floor(s / 3600);
         const m = Math.floor((s % 3600) / 60);
         const sec = s % 60;
-        return h > 0 ? `${h}ч ${m}м` : m > 0 ? `${m}м ${sec}с` : `${sec}с`;
+        return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
     }
 
-    // Чат
-    window.sendMessage = async () => {
-        const input = document.getElementById('chatInput');
-        const text = input.value.trim();
-        if (!text || !currentUser) return;
-
-        await supabase.from('messages').insert([{ 
-            text, user_name: currentUser.user_metadata.full_name || currentUser.email, user_id: currentUser.id 
-        }]);
-
-        const { data: p } = await supabase.from('profiles').select('message_count, achievements').eq('id', currentUser.id).single();
-        let count = (p.message_count || 0) + 1;
-        let achs = p.achievements || [];
-        if (count >= 20 && !achs.includes('activist')) achs.push('activist');
-        await supabase.from('profiles').update({ message_count: count, achievements: achs }).eq('id', currentUser.id);
-        
-        input.value = '';
-    };
-
-    async function loadMessages() {
-        const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(15);
-        if (data) {
-            document.getElementById('chatBox').innerHTML = data.reverse().map(m => `
-                <div class="msg"><b>${m.user_name.split(' ')[0]}:</b> ${m.text}</div>
-            `).join('');
-            document.getElementById('chatBox').scrollTop = document.getElementById('chatBox').scrollHeight;
-        }
-    }
-
-    // Рейтинг
-    async function fetchGroup() {
-        const { data } = await supabase.from("profiles").select("*").order('study_seconds', { ascending: false });
-        const now = new Date();
-        document.getElementById('groupList').innerHTML = (data || []).map((u, i) => {
-            const isOnline = (now - new Date(u.last_seen)) < 120000;
-            const achs = (u.achievements || []).map(a => ACHIEVEMENTS[a]?.icon).join('');
-            return `
-                <div class="user-row">
-                    <div style="display:flex; align-items:center">
-                        <span class="rank-num">${i+1}</span>
-                        <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
-                        <div>
-                            <b>${u.username || u.email.split('@')[0]}</b>
-                            <div style="font-size:0.8em">${achs}</div>
-                        </div>
-                    </div>
-                    <div class="study-meta">${formatTime(u.study_seconds)}</div>
-                </div>`;
-        }).join('');
-    }
-
+    // --- ИНИЦИАЛИЗАЦИЯ ---
     async function init() {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            currentUser = user;
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+            user = data.user;
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('mainBlock').classList.remove('hidden');
-            document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
-            
-            const { data: p } = await supabase.from("profiles").select("*").eq('id', user.id).single();
+            document.getElementById('userNameDisplay').innerText = user.email;
+
+            const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
             if (p) {
-                seconds = p.study_seconds || 0;
-                renderMyBadges(p.achievements || []);
+                totalSeconds = p.study_seconds || 0;
+                renderAchievements(p.achievements || []);
             }
 
             setInterval(() => {
                 if (!isPaused) {
-                    seconds++;
+                    totalSeconds++;
                     sessionSeconds++;
-                    document.getElementById('timer').innerText = formatTime(seconds);
-                    if (seconds % 30 === 0) saveProgress();
+                    document.getElementById('timer').innerText = formatTime(sessionSeconds);
+                    if (totalSeconds % 30 === 0) saveToDatabase();
                 }
             }, 1000);
         }
-        loadMessages();
-        fetchGroup();
-        supabase.channel('messages_realtime').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, loadMessages).subscribe();
-        setInterval(fetchGroup, 30000);
+        fetchRating();
     }
+
+    window.signIn = () => supabase.auth.signInWithOAuth({ provider: 'google' });
+    window.signOut = async () => { await supabase.auth.signOut(); location.reload(); };
+
     init();
 </script>
 </body>
