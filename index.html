@@ -3,61 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Monitor Pro</title>
+    <title>Realtime Monitor Pro</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --bg-body: #0b0e14;
+            --bg-deep: #0b0e14;
             --bg-card: #161b22;
             --bg-inner: #0d1117;
             --accent: #38bdf8;
             --text-main: #f8fafc;
             --text-dim: #8b949e;
-            --success: #238636;
+            --success: #39d353;
             --danger: #da3633;
+            --warning: #f59e0b;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 15px; }
-        .container { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-
-        .card { background: var(--bg-card); border-radius: 16px; padding: 20px; border: 1px solid #30363d; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-deep); color: var(--text-main); margin: 0; padding: 15px; line-height: 1.4; }
+        .container { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 15px; }
         
-        /* СЕССИЯ УЧЕБЫ */
+        /* КАРТОЧКИ */
+        .card { background: var(--bg-card); border-radius: 16px; padding: 20px; border: 1px solid #30363d; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+        h3 { margin: 0 0 15px 0; font-size: 0.9rem; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; }
+
+        /* ТАЙМЕР СЕССИИ */
         .timer-box { text-align: center; }
-        .timer-box h2 { font-size: 0.9rem; color: var(--text-dim); text-transform: uppercase; margin: 0; }
-        .time-display { font-size: 3.5rem; font-weight: 800; color: #39d353; margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 10px; }
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.1); color: #f59e0b; font-weight: bold; }
+        .time-display { font-size: 3.5rem; font-weight: 800; color: var(--success); margin: 10px 0; display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; background: rgba(245, 158, 11, 0.1); color: var(--warning); font-weight: bold; }
 
-        /* КНОПКИ */
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        /* КНОПКИ УПРАВЛЕНИЯ */
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 20px; }
         .btn { border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
-        .btn-primary { background: var(--success); color: white; }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-secondary { background: #30363d; color: white; }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-start { background: rgba(57, 211, 83, 0.15); color: var(--success); border: 1px solid var(--success); }
+        .btn-stop { background: var(--danger); color: white; }
+        .btn-gray { background: #30363d; color: white; }
 
-        /* ВАШ ПРОФИЛЬ (СТАТИСТИКА) */
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; text-align: center; border-top: 1px solid #30363d; padding-top: 15px; }
+        /* СТАТИСТИКА ПРОФИЛЯ */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 15px; border-top: 1px solid #30363d; padding-top: 15px; }
+        .stat-item { text-align: center; }
         .stat-val { display: block; font-weight: 800; font-size: 1.1rem; }
-        .stat-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
+        .stat-lab { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
+
+        /* ВЫБОР СТАТУСА */
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .status-btn { background: var(--bg-inner); border: 1px solid #30363d; color: var(--text-dim); padding: 10px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; font-size: 0.8rem; text-align: left; }
+        .status-btn.active { border-color: var(--accent); color: white; background: rgba(56, 189, 248, 0.05); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; }
 
         /* ВКЛАДКИ */
-        .tab-nav { display: flex; background: var(--bg-inner); padding: 4px; border-radius: 10px; margin: 10px 0; }
-        .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); padding: 8px; cursor: pointer; border-radius: 8px; font-size: 0.8rem; font-weight: bold; }
+        .tab-nav { display: flex; background: var(--bg-inner); padding: 4px; border-radius: 12px; margin-top: 10px; }
+        .tab-btn { flex: 1; background: none; border: none; color: var(--text-dim); padding: 10px; cursor: pointer; border-radius: 10px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .tab-btn.active { background: #30363d; color: white; }
 
-        /* ДОСТИЖЕНИЯ */
-        .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .ach-card { background: var(--bg-inner); padding: 12px; border-radius: 12px; border: 1px solid #30363d; position: relative; opacity: 0.5; filter: grayscale(1); }
-        .ach-card.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--accent); }
-        .ach-icon { font-size: 1.5rem; margin-bottom: 5px; display: block; }
-        .ach-info b { font-size: 0.8rem; display: block; }
-        .ach-info span { font-size: 0.65rem; color: var(--text-dim); }
+        /* СПИСОК РЕЙТИНГА */
+        .user-line { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #30363d; }
+        .user-line:last-child { border: none; }
+        .user-info { display: flex; align-items: center; gap: 12px; }
+        .rank-num { width: 20px; font-weight: 800; color: var(--text-dim); font-size: 0.9rem; }
+        .avatar { width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #000; }
 
-        /* РЕЙТИНГ */
-        .user-line { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #30363d; }
-        .user-meta { display: flex; align-items: center; gap: 10px; }
-        .avatar-circle { width: 32px; height: 32px; background: #38bdf8; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        /* СЕТКА ДОСТИЖЕНИЙ */
+        .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .ach-card { background: var(--bg-inner); padding: 15px; border-radius: 16px; border: 1px solid #30363d; opacity: 0.4; filter: grayscale(1); transition: 0.3s; position: relative; }
+        .ach-card.unlocked { opacity: 1; filter: grayscale(0); border-color: var(--accent); }
+        .ach-icon { font-size: 1.6rem; margin-bottom: 8px; display: block; }
+        .ach-title { font-weight: bold; font-size: 0.85rem; display: block; }
+        .ach-desc { font-size: 0.65rem; color: var(--text-dim); display: block; margin-top: 4px; }
+        .ach-label { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 4px; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; }
 
         .hidden { display: none; }
     </style>
@@ -66,40 +77,57 @@
 
 <div class="container">
     <div id="authBlock" class="card text-center">
-        <h2>Study Monitor</h2>
-        <button onclick="signIn()" class="btn btn-primary" style="width: 100%">Войти через Google</button>
+        <h2 style="margin:0 0 10px 0">Study Monitor</h2>
+        <button onclick="signIn()" class="btn btn-start" style="width:100%">Войти через Google</button>
     </div>
 
     <div id="mainBlock" class="hidden">
         <div class="card timer-box">
-            <h2 id="userName">Студент</h2>
-            <div class="time-display"><i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span></div>
-            <div class="status-badge" id="statusLabel">УЧЕБА</div>
+            <h3 id="displayUserName">Загрузка...</h3>
+            <div class="time-display">
+                <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
+            </div>
+            <div class="status-badge" id="pauseLabel">УЧЕБА</div>
             
             <div class="btn-row">
-                <button id="pauseBtn" onclick="togglePause()" class="btn btn-secondary">Пауза</button>
-                <button id="finishBtn" onclick="saveSession()" class="btn btn-danger">Завершить</button>
-                <button onclick="signOut()" class="btn btn-secondary">Выход</button>
+                <button id="toggleBtn" onclick="toggleTimer()" class="btn btn-start">Продолжить</button>
+                <button id="finishBtn" onclick="saveAndFinish()" class="btn btn-stop">Завершить</button>
+                <button onclick="signOut()" class="btn btn-gray">Выход</button>
             </div>
 
-            <div class="stats-grid">
-                <div><span class="stat-val" id="st-time">0с</span><span class="stat-label">учеба</span></div>
-                <div><span class="stat-val" id="st-sessions">0</span><span class="stat-label">сессий</span></div>
-                <div><span class="stat-val" id="st-msgs">0</span><span class="stat-label">сообщ.</span></div>
-                <div><span class="stat-val" id="st-achs">0</span><span class="stat-label">достиж.</span></div>
+            <div class="stats-row">
+                <div class="stat-item"><span class="stat-val" id="stat-time">0с</span><span class="stat-lab">учеба</span></div>
+                <div class="stat-item"><span class="stat-val" id="stat-sess">0</span><span class="stat-lab">сессий</span></div>
+                <div class="stat-item"><span class="stat-val" id="stat-msg">0</span><span class="stat-lab">сообщ.</span></div>
+                <div class="stat-item"><span class="stat-val" id="stat-ach">0</span><span class="stat-lab">достиж.</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Ваш текущий статус</h3>
+            <div class="status-grid">
+                <button class="status-btn active" onclick="updateStatus('online', this)"><span class="dot" style="background:#238636"></span> В сети</button>
+                <button class="status-btn" onclick="updateStatus('away', this)"><span class="dot" style="background:#f59e0b"></span> Отошел</button>
+                <button class="status-btn" onclick="updateStatus('busy', this)"><span class="dot" style="background:#da3633"></span> Занят</button>
+                <button class="status-btn" onclick="updateStatus('dnd', this)"><span class="dot" style="background:#8b949e"></span> Не беспокоить</button>
             </div>
         </div>
 
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="showTab('rating')">Рейтинг</button>
-            <button class="tab-btn" onclick="showTab('achievements')">Достижения</button>
+            <button class="tab-btn active" onclick="switchTab('rating')"><i class="fas fa-trophy"></i> Рейтинг</button>
+            <button class="tab-btn" onclick="switchTab('achs')"><i class="fas fa-award"></i> Достижения</button>
         </div>
 
         <div id="tab-rating" class="card">
+            <h3>Топ студентов</h3>
             <div id="ratingList">Загрузка...</div>
         </div>
 
-        <div id="tab-achievements" class="card hidden">
+        <div id="tab-achs" class="card hidden">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
+                <h3 style="margin:0">Все достижения</h3>
+                <span id="achScore" style="color:var(--accent); font-weight:bold; font-size:0.8rem">0/14</span>
+            </div>
             <div class="ach-grid" id="achGrid"></div>
         </div>
     </div>
@@ -111,111 +139,120 @@
 
     let user = null;
     let seconds = 0;
-    let isPaused = false;
-    let profileData = {};
+    let isPaused = true;
+    let userProfile = {};
+    let currentStatus = 'online';
 
-    const ACH_CONFIG = {
-        'first': { icon: '🌱', name: 'Первый шаг', desc: 'Первая сессия' },
-        'return': { icon: '🔄', name: 'Возвращение', desc: 'Вернулся к учебе' },
-        'marathon': { icon: '⚡', name: 'Легенда', desc: 'Учеба > 2 часов' },
-        'work': { icon: '💼', name: 'Трудоголик', desc: 'Накопил 5 часов' }
+    const ACH_LIST = {
+        'first': { icon: '🌱', name: 'Первый шаг', desc: 'Провел первую учебную сессию', rarity: 'Обычное', color: '#238636' },
+        'return': { icon: '🔄', name: 'Возвращение', desc: 'Вернулся к учебе после перерыва', rarity: 'Обычное', color: '#238636' },
+        'legend': { icon: '⚡', name: 'Легенда', desc: 'Накопил 20 часов учебы суммарно', rarity: 'Легендарное', color: '#fbbf24' },
+        'work': { icon: '💼', name: 'Трудоголик', desc: 'Накопил 5 часов учебы суммарно', rarity: 'Редкое', color: '#38bdf8' }
     };
 
-    // --- ФУНКЦИИ ---
+    // --- СИСТЕМНЫЕ ФУНКЦИИ ---
     window.signIn = () => supabase.auth.signInWithOAuth({ provider: 'google' });
     window.signOut = () => { supabase.auth.signOut(); location.reload(); };
 
-    window.showTab = (name) => {
+    window.switchTab = (name) => {
         document.getElementById('tab-rating').classList.toggle('hidden', name !== 'rating');
-        document.getElementById('tab-achievements').classList.toggle('hidden', name !== 'achievements');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(name.slice(0,3))));
+        document.getElementById('tab-achs').classList.toggle('hidden', name !== 'achs');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerHTML.toLowerCase().includes(name.slice(0,3))));
     };
 
-    window.togglePause = () => {
+    window.updateStatus = (val, el) => {
+        currentStatus = val;
+        document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+    };
+
+    window.toggleTimer = () => {
         isPaused = !isPaused;
-        document.getElementById('pauseBtn').innerText = isPaused ? 'Пуск' : 'Пауза';
-        document.getElementById('statusLabel').innerText = isPaused ? 'ПЕРЕРЫВ' : 'УЧЕБА';
+        const btn = document.getElementById('toggleBtn');
+        btn.innerHTML = isPaused ? 'Продолжить' : 'Пауза';
+        btn.className = isPaused ? 'btn btn-start' : 'btn btn-gray';
+        document.getElementById('pauseLabel').innerText = isPaused ? 'ПЕРЕРЫВ' : 'УЧЕБА';
     };
 
-    // ГЛАВНОЕ: Исправленное сохранение
-    window.saveSession = async () => {
+    // --- ЛОГИКА СОХРАНЕНИЯ (Исправление рейтинга) ---
+    window.saveAndFinish = async () => {
         if (!user) return;
         const btn = document.getElementById('finishBtn');
         btn.disabled = true;
 
-        let newAchs = profileData.achievements || [];
-        if (!newAchs.includes('first')) newAchs.push('first');
-        if (seconds > 7200 && !newAchs.includes('marathon')) newAchs.push('marathon');
+        let achs = userProfile.achievements || [];
+        if (!achs.includes('first')) achs.push('first');
+        if ((userProfile.study_seconds + seconds) >= 18000 && !achs.includes('work')) achs.push('work');
 
         const { error } = await supabase.from('profiles').upsert({
             id: user.id,
             username: user.user_metadata.full_name || user.email,
-            study_seconds: (profileData.study_seconds || 0) + seconds,
-            session_count: (profileData.session_count || 0) + 1,
-            achievements: newAchs,
+            study_seconds: (userProfile.study_seconds || 0) + seconds,
+            session_count: (userProfile.session_count || 0) + 1,
+            status: currentStatus,
+            achievements: achs,
             last_seen: new Date().toISOString()
         });
 
-        if (error) {
-            alert("Ошибка сохранения: " + error.message);
-        } else {
-            alert("Успешно сохранено!");
-            location.reload(); // Перезагружаем для чистоты статистики
-        }
-        btn.disabled = false;
+        if (error) alert("Ошибка: " + error.message);
+        else { alert("Сессия сохранена!"); location.reload(); }
     };
 
-    async function loadData() {
+    function formatTime(s) {
+        if (!s || s === 0) return "0с";
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        const sec = s % 60;
+        return h > 0 ? `${h}ч ${m}м` : m > 0 ? `${m}м` : `${sec}с`;
+    }
+
+    // --- ОБНОВЛЕНИЕ ДАННЫХ ---
+    async function updateUI() {
+        // 1. Личный профиль
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (p) {
-            profileData = p;
-            document.getElementById('st-time').innerText = formatTime(p.study_seconds);
-            document.getElementById('st-sessions').innerText = p.session_count || 0;
-            document.getElementById('st-msgs').innerText = p.message_count || 0;
-            document.getElementById('st-achs').innerText = (p.achievements || []).length;
-            renderAchs(p.achievements || []);
+            userProfile = p;
+            document.getElementById('stat-time').innerText = formatTime(p.study_seconds);
+            document.getElementById('stat-sess').innerText = p.session_count || 0;
+            document.getElementById('stat-msg').innerText = p.message_count || 0;
+            document.getElementById('stat-ach').innerText = (p.achievements || []).length;
+            
+            // Рендер достижений
+            const unlocked = p.achievements || [];
+            document.getElementById('achGrid').innerHTML = Object.entries(ACH_LIST).map(([id, a]) => `
+                <div class="ach-card ${unlocked.includes(id) ? 'unlocked' : ''}">
+                    <span class="ach-icon">${a.icon}</span>
+                    <span class="ach-title">${a.name}</span>
+                    <span class="ach-desc">${a.desc}</span>
+                    <span class="ach-label" style="background:rgba(0,0,0,0.3); color:${a.color}">${a.rarity}</span>
+                </div>
+            `).join('');
+            document.getElementById('achScore').innerText = `${unlocked.length}/14`;
         }
-        
+
+        // 2. Рейтинг (ИСПРАВЛЕННАЯ СОРТИРОВКА)
         const { data: list } = await supabase.from('profiles').select('*').order('study_seconds', { ascending: false });
         document.getElementById('ratingList').innerHTML = (list || []).map((u, i) => `
             <div class="user-line">
-                <div class="user-meta">
-                    <b>${i+1}</b>
-                    <div class="avatar-circle">${(u.username || 'S')[0]}</div>
+                <div class="user-info">
+                    <span class="rank-num">${i+1}</span>
+                    <div class="avatar">${(u.username || 'S')[0]}</div>
                     <span>${u.username || 'Студент'}</span>
                 </div>
-                <b>${formatTime(u.study_seconds)}</b>
+                <b style="color:var(--success)">${formatTime(u.study_seconds)}</b>
             </div>
         `).join('');
     }
 
-    function renderAchs(unlocked) {
-        document.getElementById('achGrid').innerHTML = Object.entries(ACH_CONFIG).map(([id, a]) => `
-            <div class="ach-card ${unlocked.includes(id) ? 'unlocked' : ''}">
-                <span class="ach-icon">${a.icon}</span>
-                <div class="ach-info"><b>${a.name}</b><span>${a.desc}</span></div>
-            </div>
-        `).join('');
-    }
-
-    function formatTime(s) {
-        if (!s) return "0с";
-        if (s < 60) return s + "с";
-        let m = Math.floor(s / 60);
-        return m + "м";
-    }
-
-    // Инициализация
     async function init() {
         const { data } = await supabase.auth.getUser();
         if (data?.user) {
             user = data.user;
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('mainBlock').classList.remove('hidden');
-            document.getElementById('userName').innerText = user.user_metadata.full_name || user.email;
+            document.getElementById('displayUserName').innerText = user.user_metadata.full_name || user.email;
             
-            await loadData();
-            
+            await updateUI();
             setInterval(() => {
                 if (!isPaused) {
                     seconds++;
