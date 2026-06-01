@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realtime Monitor Pro</title>
+    <title>Realtime Monitor Pro (Без авторизации)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
@@ -31,7 +31,7 @@
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; background: rgba(245, 158, 11, 0.1); color: var(--warning); font-weight: bold; }
 
         /* КНОПКИ УПРАВЛЕНИЯ */
-        .btn-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 20px; }
+        .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
         .btn { border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px; transition: 0.2s; }
         .btn-start { background: rgba(57, 211, 83, 0.15); color: var(--success); border: 1px solid var(--success); }
         .btn-stop { background: var(--danger); color: white; }
@@ -71,20 +71,14 @@
         .ach-label { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 4px; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; }
 
         .hidden { display: none; }
-        .text-center { text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="authBlock" class="card text-center">
-        <h2 style="margin:0 0 10px 0">Study Monitor</h2>
-        <button onclick="signIn()" class="btn btn-start" style="width:100%">Войти через Google</button>
-    </div>
-
-    <div id="mainBlock" class="hidden">
+    <div id="mainBlock">
         <div class="card timer-box">
-            <h3 id="displayUserName">Загрузка...</h3>
+            <h3 id="displayUserName">Загрузка профиля...</h3>
             <div class="time-display">
                 <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
             </div>
@@ -93,7 +87,6 @@
             <div class="btn-row">
                 <button id="toggleBtn" onclick="toggleTimer()" class="btn btn-start">Продолжить</button>
                 <button id="finishBtn" onclick="saveAndFinish()" class="btn btn-stop">Завершить</button>
-                <button onclick="signOut()" class="btn btn-gray">Выход</button>
             </div>
 
             <div class="stats-row">
@@ -138,7 +131,10 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
     const supabase = createClient('https://tcnmxalzmfveerioxlha.supabase.co', 'sb_publishable_ngHUhvlyl_Hmrb_C4DH5Uw_YdhDlK07');
 
-    let user = null;
+    // ВРЕМЕННЫЙ ТЕСТОВЫЙ ПОЛЬЗОВАТЕЛЬ (берём существующий UUID из вашей БД)
+    const FAKE_USER_ID = 'dfc3041-4f45-4a77-b8d9-d48ed8fc76d8'; 
+    let user = { id: FAKE_USER_ID }; 
+    
     let seconds = 0;
     let isPaused = true;
     let userProfile = {};
@@ -152,9 +148,6 @@
     };
 
     // --- СИСТЕМНЫЕ ФУНКЦИИ ---
-    window.signIn = () => supabase.auth.signInWithOAuth({ provider: 'google' });
-    window.signOut = () => { supabase.auth.signOut(); };
-
     window.switchTab = (name) => {
         document.getElementById('tab-rating').classList.toggle('hidden', name !== 'rating');
         document.getElementById('tab-achs').classList.toggle('hidden', name !== 'achs');
@@ -165,20 +158,19 @@
         });
     };
 
-    // РЕАЛИЗАЦИЯ 1: Функция динамического обновления статуса в БД
+    // Мгновенное обновление статуса в БД под фейковым юзером
     window.updateStatus = async (val, el) => {
         currentStatus = val;
         document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
         if (el) el.classList.add('active');
 
-        if (user) {
-            const { error } = await supabase
-                .from('profiles')
-                .update({ status: val, last_seen: new Date().toISOString() })
-                .eq('id', user.id);
+        const { error } = await supabase
+            .from('profiles')
+            .update({ status: val, last_seen: new Date().toISOString() })
+            .eq('id', user.id);
 
-            if (error) console.error("Ошибка обновления статуса:", error.message);
-        }
+        if (error) console.error("Ошибка обновления статуса:", error.message);
+        else await updateUI(); // Сразу перерисуем рейтинг, чтобы увидеть изменения
     };
 
     window.toggleTimer = () => {
@@ -191,7 +183,6 @@
 
     // --- ЛОГИКА СОХРАНЕНИЯ СЕССИИ ---
     window.saveAndFinish = async () => {
-        if (!user) return;
         const btn = document.getElementById('finishBtn');
         btn.disabled = true;
 
@@ -204,7 +195,7 @@
 
         const { error } = await supabase.from('profiles').upsert({
             id: user.id,
-            username: user.user_metadata.full_name || user.email,
+            username: userProfile.username || 'Тестовый Руслан',
             study_seconds: totalTimeNow,
             session_count: (userProfile.session_count || 0) + 1,
             status: currentStatus,
@@ -213,7 +204,7 @@
         });
 
         if (error) {
-            alert("Ошибка: " + error.message);
+            alert("Ошибка сохранения: " + error.message);
             btn.disabled = false;
         } else {
             alert("Сессия успешно сохранена!");
@@ -235,14 +226,13 @@
 
     // --- ОБНОВЛЕНИЕ ДАННЫХ ИНТЕРФЕЙСА ---
     async function updateUI() {
-        if (!user) return;
-
-        // 1. Личный профиль
+        // 1. Загрузка данных текущего фейкового профиля
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (p) {
             userProfile = p;
             currentStatus = p.status || 'online';
             
+            document.getElementById('displayUserName').innerText = p.username || "Без имени";
             document.getElementById('stat-time').innerText = formatTime(p.study_seconds);
             document.getElementById('stat-sess').innerText = p.session_count || 0;
             document.getElementById('stat-msg').innerText = p.message_count || 0;
@@ -285,40 +275,20 @@
         `).join('');
     }
 
-    // РЕАЛИЗАЦИЯ 2: Слушатель изменений авторизации (onAuthStateChange)
-    supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-            user = session.user;
-            document.getElementById('authBlock').classList.add('hidden');
-            document.getElementById('mainBlock').classList.remove('hidden');
-            document.getElementById('displayUserName').innerText = user.user_metadata.full_name || user.email;
-            
-            // Создание записи профиля "на лету" при первом входе
-            await supabase.from('profiles').upsert({
-                id: user.id,
-                username: user.user_metadata.full_name || user.email,
-                status: currentStatus,
-                last_seen: new Date().toISOString()
-            }, { onConflict: 'id' });
-
-            await updateUI();
-        } 
+    // Инициализация приложения сразу без проверок auth
+    async function init() {
+        await updateUI();
         
-        if (event === 'SIGNED_OUT') {
-            user = null;
-            document.getElementById('authBlock').classList.remove('hidden');
-            document.getElementById('mainBlock').classList.add('hidden');
-            location.reload();
-        }
-    });
-
-    // Таймер секунд (фронтенд)
-    setInterval(() => {
-        if (!isPaused) {
-            seconds++;
-            document.getElementById('timer').innerText = seconds + " сек.";
-        }
-    }, 1000);
+        // Запуск локального таймера
+        setInterval(() => {
+            if (!isPaused) {
+                seconds++;
+                document.getElementById('timer').innerText = seconds + " сек.";
+            }
+        }, 1000);
+    }
+    
+    init();
 </script>
 </body>
 </html>
