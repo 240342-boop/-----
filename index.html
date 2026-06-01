@@ -71,6 +71,7 @@
         .ach-label { display: inline-block; margin-top: 8px; padding: 2px 8px; border-radius: 4px; font-size: 0.55rem; font-weight: 800; text-transform: uppercase; }
 
         .hidden { display: none; }
+        .text-center { text-align: center; }
     </style>
 </head>
 <body>
@@ -87,7 +88,7 @@
             <div class="time-display">
                 <i class="fas fa-stopwatch"></i> <span id="timer">0 сек.</span>
             </div>
-            <div class="status-badge" id="pauseLabel">УЧЕБА</div>
+            <div class="status-badge" id="pauseLabel">ПЕРЕРЫВ</div>
             
             <div class="btn-row">
                 <button id="toggleBtn" onclick="toggleTimer()" class="btn btn-start">Продолжить</button>
@@ -106,16 +107,16 @@
         <div class="card">
             <h3>Ваш текущий статус</h3>
             <div class="status-grid">
-                <button class="status-btn active" onclick="updateStatus('online', this)"><span class="dot" style="background:#238636"></span> В сети</button>
-                <button class="status-btn" onclick="updateStatus('away', this)"><span class="dot" style="background:#f59e0b"></span> Отошел</button>
-                <button class="status-btn" onclick="updateStatus('busy', this)"><span class="dot" style="background:#da3633"></span> Занят</button>
-                <button class="status-btn" onclick="updateStatus('dnd', this)"><span class="dot" style="background:#8b949e"></span> Не беспокоить</button>
+                <button id="status-online" class="status-btn active" onclick="updateStatus('online', this)"><span class="dot" style="background:#238636"></span> В сети</button>
+                <button id="status-away" class="status-btn" onclick="updateStatus('away', this)"><span class="dot" style="background:#f59e0b"></span> Отошел</button>
+                <button id="status-busy" class="status-btn" onclick="updateStatus('busy', this)"><span class="dot" style="background:#da3633"></span> Занят</button>
+                <button id="status-dnd" class="status-btn" onclick="updateStatus('dnd', this)"><span class="dot" style="background:#8b949e"></span> Не беспокоить</button>
             </div>
         </div>
 
         <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('rating')"><i class="fas fa-trophy"></i> Рейтинг</button>
-            <button class="tab-btn" onclick="switchTab('achs')"><i class="fas fa-award"></i> Достижения</button>
+            <button class="tab-nav-btn tab-btn active" onclick="switchTab('rating')"><i class="fas fa-trophy"></i> Рейтинг</button>
+            <button class="tab-nav-btn tab-btn" onclick="switchTab('achs')"><i class="fas fa-award"></i> Достижения</button>
         </div>
 
         <div id="tab-rating" class="card">
@@ -126,7 +127,7 @@
         <div id="tab-achs" class="card hidden">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
                 <h3 style="margin:0">Все достижения</h3>
-                <span id="achScore" style="color:var(--accent); font-weight:bold; font-size:0.8rem">0/14</span>
+                <span id="achScore" style="color:var(--accent); font-weight:bold; font-size:0.8rem">0/4</span>
             </div>
             <div class="ach-grid" id="achGrid"></div>
         </div>
@@ -152,18 +153,32 @@
 
     // --- СИСТЕМНЫЕ ФУНКЦИИ ---
     window.signIn = () => supabase.auth.signInWithOAuth({ provider: 'google' });
-    window.signOut = () => { supabase.auth.signOut(); location.reload(); };
+    window.signOut = () => { supabase.auth.signOut(); };
 
     window.switchTab = (name) => {
         document.getElementById('tab-rating').classList.toggle('hidden', name !== 'rating');
         document.getElementById('tab-achs').classList.toggle('hidden', name !== 'achs');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.innerHTML.toLowerCase().includes(name.slice(0,3))));
+        
+        document.querySelectorAll('.tab-nav-btn').forEach(b => {
+            const isMatch = b.textContent.toLowerCase().includes(name === 'rating' ? 'рейтинг' : 'достиж');
+            b.classList.toggle('active', isMatch);
+        });
     };
 
-    window.updateStatus = (val, el) => {
+    // РЕАЛИЗАЦИЯ 1: Функция динамического обновления статуса в БД
+    window.updateStatus = async (val, el) => {
         currentStatus = val;
         document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
+        if (el) el.classList.add('active');
+
+        if (user) {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ status: val, last_seen: new Date().toISOString() })
+                .eq('id', user.id);
+
+            if (error) console.error("Ошибка обновления статуса:", error.message);
+        }
     };
 
     window.toggleTimer = () => {
@@ -174,7 +189,7 @@
         document.getElementById('pauseLabel').innerText = isPaused ? 'ПЕРЕРЫВ' : 'УЧЕБА';
     };
 
-    // --- ЛОГИКА СОХРАНЕНИЯ (Исправление рейтинга) ---
+    // --- ЛОГИКА СОХРАНЕНИЯ СЕССИИ ---
     window.saveAndFinish = async () => {
         if (!user) return;
         const btn = document.getElementById('finishBtn');
@@ -182,20 +197,32 @@
 
         let achs = userProfile.achievements || [];
         if (!achs.includes('first')) achs.push('first');
-        if ((userProfile.study_seconds + seconds) >= 18000 && !achs.includes('work')) achs.push('work');
+        
+        const totalTimeNow = (userProfile.study_seconds || 0) + seconds;
+        if (totalTimeNow >= 18000 && !achs.includes('work')) achs.push('work');
+        if (totalTimeNow >= 72000 && !achs.includes('legend')) achs.push('legend');
 
         const { error } = await supabase.from('profiles').upsert({
             id: user.id,
             username: user.user_metadata.full_name || user.email,
-            study_seconds: (userProfile.study_seconds || 0) + seconds,
+            study_seconds: totalTimeNow,
             session_count: (userProfile.session_count || 0) + 1,
             status: currentStatus,
             achievements: achs,
             last_seen: new Date().toISOString()
         });
 
-        if (error) alert("Ошибка: " + error.message);
-        else { alert("Сессия сохранена!"); location.reload(); }
+        if (error) {
+            alert("Ошибка: " + error.message);
+            btn.disabled = false;
+        } else {
+            alert("Сессия успешно сохранена!");
+            seconds = 0;
+            document.getElementById('timer').innerText = "0 сек.";
+            if (!isPaused) toggleTimer();
+            await updateUI();
+            btn.disabled = false;
+        }
     };
 
     function formatTime(s) {
@@ -206,17 +233,26 @@
         return h > 0 ? `${h}ч ${m}м` : m > 0 ? `${m}м` : `${sec}с`;
     }
 
-    // --- ОБНОВЛЕНИЕ ДАННЫХ ---
+    // --- ОБНОВЛЕНИЕ ДАННЫХ ИНТЕРФЕЙСА ---
     async function updateUI() {
+        if (!user) return;
+
         // 1. Личный профиль
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (p) {
             userProfile = p;
+            currentStatus = p.status || 'online';
+            
             document.getElementById('stat-time').innerText = formatTime(p.study_seconds);
             document.getElementById('stat-sess').innerText = p.session_count || 0;
             document.getElementById('stat-msg').innerText = p.message_count || 0;
             document.getElementById('stat-ach').innerText = (p.achievements || []).length;
             
+            // Синхронизация кнопок статуса
+            document.querySelectorAll('.status-btn').forEach(b => b.classList.remove('active'));
+            const activeStatusBtn = document.getElementById(`status-${currentStatus}`);
+            if (activeStatusBtn) activeStatusBtn.classList.add('active');
+
             // Рендер достижений
             const unlocked = p.achievements || [];
             document.getElementById('achGrid').innerHTML = Object.entries(ACH_LIST).map(([id, a]) => `
@@ -227,16 +263,21 @@
                     <span class="ach-label" style="background:rgba(0,0,0,0.3); color:${a.color}">${a.rarity}</span>
                 </div>
             `).join('');
-            document.getElementById('achScore').innerText = `${unlocked.length}/14`;
+            document.getElementById('achScore').innerText = `${unlocked.length}/4`;
         }
 
-        // 2. Рейтинг (ИСПРАВЛЕННАЯ СОРТИРОВКА)
+        // 2. Рейтинг топ студентов
         const { data: list } = await supabase.from('profiles').select('*').order('study_seconds', { ascending: false });
         document.getElementById('ratingList').innerHTML = (list || []).map((u, i) => `
             <div class="user-line">
                 <div class="user-info">
                     <span class="rank-num">${i+1}</span>
-                    <div class="avatar">${(u.username || 'S')[0]}</div>
+                    <div class="avatar" style="position:relative;">
+                        ${(u.username || 'S')[0]}
+                        <span style="position:absolute; bottom:-2px; right:-2px; width:10px; height:10px; border-radius:50%; border:2px solid var(--bg-card); background:${
+                            u.status === 'online' ? '#238636' : u.status === 'away' ? '#f59e0b' : u.status === 'busy' ? '#da3633' : '#8b949e'
+                        }"></span>
+                    </div>
                     <span>${u.username || 'Студент'}</span>
                 </div>
                 <b style="color:var(--success)">${formatTime(u.study_seconds)}</b>
@@ -244,24 +285,40 @@
         `).join('');
     }
 
-    async function init() {
-        const { data } = await supabase.auth.getUser();
-        if (data?.user) {
-            user = data.user;
+    // РЕАЛИЗАЦИЯ 2: Слушатель изменений авторизации (onAuthStateChange)
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+            user = session.user;
             document.getElementById('authBlock').classList.add('hidden');
             document.getElementById('mainBlock').classList.remove('hidden');
             document.getElementById('displayUserName').innerText = user.user_metadata.full_name || user.email;
             
+            // Создание записи профиля "на лету" при первом входе
+            await supabase.from('profiles').upsert({
+                id: user.id,
+                username: user.user_metadata.full_name || user.email,
+                status: currentStatus,
+                last_seen: new Date().toISOString()
+            }, { onConflict: 'id' });
+
             await updateUI();
-            setInterval(() => {
-                if (!isPaused) {
-                    seconds++;
-                    document.getElementById('timer').innerText = seconds + " сек.";
-                }
-            }, 1000);
+        } 
+        
+        if (event === 'SIGNED_OUT') {
+            user = null;
+            document.getElementById('authBlock').classList.remove('hidden');
+            document.getElementById('mainBlock').classList.add('hidden');
+            location.reload();
         }
-    }
-    init();
+    });
+
+    // Таймер секунд (фронтенд)
+    setInterval(() => {
+        if (!isPaused) {
+            seconds++;
+            document.getElementById('timer').innerText = seconds + " сек.";
+        }
+    }, 1000);
 </script>
 </body>
 </html>
